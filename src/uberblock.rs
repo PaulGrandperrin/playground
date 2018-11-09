@@ -3,6 +3,7 @@ use std::io::Cursor;
 use failure::format_err;
 use std::mem;
 use bytes::{Buf, BufMut};
+use std::fmt;
 
 const MAGIC_NUMBER: &[u8;8] = b"ReactDB0";
 
@@ -63,11 +64,15 @@ impl Uberblock {
     }
 }
 
+impl crate::common::RawSized for Uberblock {
+    const RAW_SIZE: usize = Self::RAW_SIZE;
+}
+use serde::de::{self, Deserialize, Deserializer, Visitor, SeqAccess};
+use serde::ser::{Serialize, Serializer, SerializeStruct};
 
-use serde::ser::SerializeStruct;
-impl serde::Serialize for Uberblock {
+impl Serialize for Uberblock {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where S: serde::Serializer,
+    where S: Serializer,
     {
         let mut s = serializer.serialize_struct("Uberblock", 4)?;
         s.serialize_field("magic_number", MAGIC_NUMBER)?;
@@ -78,6 +83,38 @@ impl serde::Serialize for Uberblock {
     }
 }
 
-impl crate::common::RawSized for Uberblock {
-    const RAW_SIZE: usize = Self::RAW_SIZE;
+impl<'de> Deserialize<'de> for Uberblock {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where D: Deserializer<'de>,
+    {
+        struct UberblockVisitor;
+
+        impl<'de> Visitor<'de> for UberblockVisitor {
+            type Value = Uberblock;
+
+            fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                formatter.write_str("an Uberblock")
+            }
+
+            fn visit_seq<V>(self, mut seq: V) -> Result<Uberblock, V::Error>
+            where V: SeqAccess<'de>,
+            {
+                let magic: [u8; 8] = seq.next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+                if &magic != MAGIC_NUMBER {
+                    return Err(de::Error::custom(format!("invalid magic number: {:?}", magic)))
+                }
+                let tgx = seq.next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+                let free_space_offset = seq.next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(2, &self))?;
+                let tree_root_pointer = seq.next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(3, &self))?;
+                Ok(Uberblock::new(tgx, tree_root_pointer, free_space_offset))
+            }
+        }
+
+        const FIELDS: &[&str] = &["magic_number", "tgx", "tree_root_pointer", "free_space_offset"];
+        deserializer.deserialize_struct("Uberblock", FIELDS, UberblockVisitor)
+    }
 }

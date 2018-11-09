@@ -5,7 +5,7 @@ use super::object_type::ObjectType;
 use std::io::Cursor;
 use bytes::{Buf, BufMut};
 
-#[derive(Debug, Clone, serde_derive::Serialize)]
+#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct ObjectPointer {
     offset: u64,
     len: u64,

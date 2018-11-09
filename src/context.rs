@@ -38,7 +38,6 @@ impl Context {
         let ub_mem = bincode::serialize(&ub).unwrap();
         let ub_offset = (self.tgx % Self::NUM_UBERBLOCKS) * Uberblock::RAW_SIZE as u64;
         self.block_dev.write(ub_offset, &ub_mem);
-
         self.tgx += 1;
     }
 }
