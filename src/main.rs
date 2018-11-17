@@ -12,24 +12,27 @@ mod context;
 mod common; // RawSized
 //mod algo; // Tree algorithm
 
-
 use crate::object_pointer::ObjectPointer;
 use crate::object_type::ObjectType;
 use crate::context::Context;
 use crate::tree::{LeafNode, NodeEntry};
 
 fn main() {
-    let mut ctx = Context::new();
+    //algo::test();
+
+    let mut ctx = Context::format_and_load();
     let mut ln = LeafNode::<u64, u64>::new();
     ln.insert_local(NodeEntry::new(1,1001));
     ln.insert_local(NodeEntry::new(2,1002));
     ln.insert_local(NodeEntry::new(3,1003));
-    let op = ctx.store(&ln);
+    let op = ctx.sm.store(&ln);
     ctx.commit(op.clone());
     ctx.commit(op.clone());
     ctx.commit(op.clone());
     ctx.commit(op.clone());
 
+    let ctx = Context::load().unwrap();
+    dbg!(ctx);
 }
 
 

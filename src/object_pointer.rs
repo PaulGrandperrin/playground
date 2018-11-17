@@ -1,4 +1,4 @@
-#![allow(clippy::int_plus_one)]
+//#![allow(clippy::int_plus_one)]
 
 use super::object_type::ObjectType;
 
@@ -9,18 +9,18 @@ use bytes::{Buf, BufMut};
 pub struct ObjectPointer {
     offset: u64,
     len: u64,
-    object_type: ObjectType
+    //object_type: ObjectType
     // checksum
 }
 
 impl ObjectPointer {
-    pub const RAW_SIZE: usize = 8 + 8 + super::ObjectType::RAW_SIZE;
+    pub const RAW_SIZE: usize = 8 + 8;// + super::ObjectType::RAW_SIZE;
 
     pub fn new(offset: u64, len: u64, object_type: ObjectType) -> ObjectPointer {
         ObjectPointer {
             offset,
             len,
-            object_type,
+            //object_type,
         }
     }
 
@@ -29,13 +29,13 @@ impl ObjectPointer {
         
         let offset = bytes.get_u64_le();
         let len = bytes.get_u64_le();
-        let object_type = ObjectType::from_u8(bytes.get_u8());
+        //let object_type = ObjectType::from_u8(bytes.get_u8());
 
         Ok(
             ObjectPointer {
                 offset,
                 len,
-                object_type,
+                //object_type,
             }
         )
     }
@@ -45,7 +45,7 @@ impl ObjectPointer {
         
         bytes.put_u64_le(self.offset);
         bytes.put_u64_le(self.len);
-        bytes.put_u8(self.object_type.to_u8()); // there is less than 2^8 types
+        //bytes.put_u8(self.object_type.to_u8()); // there is less than 2^8 types
     }
 
     pub fn to_mem(&self) -> Box<[u8]> {

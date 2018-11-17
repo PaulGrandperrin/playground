@@ -9,9 +9,9 @@ const MAGIC_NUMBER: &[u8;8] = b"ReactDB0";
 
 #[derive(Debug)]
 pub struct Uberblock {
-    tgx: u64,
-    free_space_offset: u64,
-    tree_root_pointer: ObjectPointer,
+    pub tgx: u64,
+    pub free_space_offset: u64,
+    pub tree_root_pointer: ObjectPointer,
 }
 
 impl Uberblock {

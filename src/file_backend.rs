@@ -2,7 +2,7 @@ use std::fs::OpenOptions;
 use std::fs::File;
 use std::io::{Read, Seek, Write, SeekFrom};
 
-
+#[derive(Debug)]
 pub struct FileBackend {
     bd: File,
     log: File,
