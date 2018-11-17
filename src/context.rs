@@ -9,7 +9,7 @@ use super::tree::LeafNode;
 pub struct Context {
     pub sm: SpaceManager,
     tgx: u64,
-    tree_root_pointer: ObjectPointer,
+    pub tree_root_pointer: ObjectPointer,
 }
 
 #[derive(Debug)]
@@ -32,18 +32,18 @@ impl SpaceManager {
         o
     }
 
-    pub fn store<O>(&mut self, object: &O) -> ObjectPointer
+    fn store<O>(&mut self, object: &O) -> ObjectPointer
     where O: serde::Serialize + super::common::RawTyped {
         let object_mem = bincode::serialize(&object).unwrap();
         let len = object_mem.len() as u64;
         let offset = self.alloc(len);
         self.block_dev.write(offset, &object_mem);
-        ObjectPointer::new(offset, len, O::RAW_TYPE)
+        ObjectPointer::new(offset, len)
     }
 
-    pub fn load<O>(&mut self, offset: u64, len: u64) -> O
+    fn retrieve<O>(&mut self, op: &ObjectPointer) -> O
     where O: serde::de::DeserializeOwned {
-        let raw = self.block_dev.read(offset, len);
+        let raw = self.block_dev.read(op.offset, op.len);
         bincode::deserialize::<O>(&raw).unwrap() // FIXME: not zero-copy
     }
 }
@@ -68,7 +68,7 @@ impl Context {
     pub fn load() -> Result<Context, failure::Error> {
         let mut sm = SpaceManager::new();
         let ub = (0..Self::NUM_UBERBLOCKS).map(|i| {
-            Ok::<_, failure::Error>(sm.load::<Uberblock>(i as u64 * Uberblock::RAW_SIZE as u64, Uberblock::RAW_SIZE as u64))
+            Ok::<_, failure::Error>(sm.retrieve::<Uberblock>(&ObjectPointer::new(i as u64 * Uberblock::RAW_SIZE as u64, Uberblock::RAW_SIZE as u64)))
         }).fold_results(None::<Uberblock>, |acc, u| { // compute max if no error
             if let Some(acc) = acc {
                 if u.tgx <= acc.tgx {
@@ -98,6 +98,15 @@ impl Context {
         self.tgx += 1;
     }
 
+    pub fn save<O>(&mut self, object: &O) -> ObjectPointer
+    where O: serde::Serialize + super::common::RawTyped {
+        // TODO: implement cache
+        self.sm.store(object)
+    }
 
-
+    pub fn get<O>(&mut self, op: &ObjectPointer) -> O
+    where O: serde::de::DeserializeOwned {
+        // TODO: implement cache
+        self.sm.retrieve(op)
+    }
 }

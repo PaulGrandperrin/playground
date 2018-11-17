@@ -1,6 +1,7 @@
 use std::fmt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
+#[non_exhaustive]
 pub enum ObjectType {
     InternalNode = 0,
     LeafNode = 1
@@ -24,6 +25,7 @@ impl ObjectType {
         }
     }
 }
+
 
 impl serde::Serialize for ObjectType {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

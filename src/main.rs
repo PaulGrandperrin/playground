@@ -1,4 +1,4 @@
-#![feature(dbg_macro, uniform_paths, trait_alias, never_type)]
+#![feature(non_exhaustive, dbg_macro, uniform_paths, trait_alias, never_type)]
 #![allow(dead_code, unused_variables, clippy::needless_pass_by_value)]
 
 use std::collections::BTreeMap;
@@ -9,13 +9,13 @@ mod uberblock;
 mod object_type;
 mod tree;
 mod context;
+//mod serialize;
 mod common; // RawSized
 //mod algo; // Tree algorithm
 
 use crate::object_pointer::ObjectPointer;
-use crate::object_type::ObjectType;
 use crate::context::Context;
-use crate::tree::{LeafNode, NodeEntry};
+use crate::tree::{LeafNode, NodeEntry, AnyNode};
 
 fn main() {
     //algo::test();
@@ -25,14 +25,17 @@ fn main() {
     ln.insert_local(NodeEntry::new(1,1001));
     ln.insert_local(NodeEntry::new(2,1002));
     ln.insert_local(NodeEntry::new(3,1003));
-    let op = ctx.sm.store(&ln);
+    let op = ctx.save(&ln);
     ctx.commit(op.clone());
     ctx.commit(op.clone());
     ctx.commit(op.clone());
     ctx.commit(op.clone());
 
-    let ctx = Context::load().unwrap();
-    dbg!(ctx);
+    let mut ctx = Context::load().unwrap();
+    dbg!(&ctx);
+    let op = ctx.tree_root_pointer.clone();
+    let root = ctx.get::<AnyNode<u64,u64>>(&op);
+    dbg!(&root);
 }
 
 

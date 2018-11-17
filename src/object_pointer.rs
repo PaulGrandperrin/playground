@@ -1,14 +1,14 @@
 //#![allow(clippy::int_plus_one)]
 
-use super::object_type::ObjectType;
+//use super::object_type::ObjectType;
 
 use std::io::Cursor;
 use bytes::{Buf, BufMut};
 
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct ObjectPointer {
-    offset: u64,
-    len: u64,
+    pub offset: u64,
+    pub len: u64,
     //object_type: ObjectType
     // checksum
 }
@@ -16,7 +16,7 @@ pub struct ObjectPointer {
 impl ObjectPointer {
     pub const RAW_SIZE: usize = 8 + 8;// + super::ObjectType::RAW_SIZE;
 
-    pub fn new(offset: u64, len: u64, object_type: ObjectType) -> ObjectPointer {
+    pub fn new(offset: u64, len: u64/*, object_type: ObjectType*/) -> ObjectPointer {
         ObjectPointer {
             offset,
             len,
