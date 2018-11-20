@@ -61,3 +61,4 @@ impl ObjectPointer {
 impl crate::common::RawSized for ObjectPointer {
     const RAW_SIZE: usize = Self::RAW_SIZE;
 }
+
