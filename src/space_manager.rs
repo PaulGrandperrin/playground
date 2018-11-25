@@ -2,6 +2,8 @@ use crate::object_pointer::ObjectPointer;
 use crate::file_backend::FileBackend;
 use crate::uberblock::Uberblock;
 
+// Kind of like ZFS's DMU (Data Management Unit)
+
 #[derive(Debug)]
 pub struct SpaceManager {
     pub block_dev: FileBackend,

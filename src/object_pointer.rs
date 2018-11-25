@@ -6,12 +6,22 @@ use std::io::Cursor;
 use bytes::{Buf, BufMut};
 
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
-pub struct ObjectPointer {
+pub struct ObjectPointer { // => rename ExtendPointer
     pub offset: u64,
     pub len: u64,
+
     //object_type: ObjectType
     // checksum
 }
+
+/*
+enum ObjectPointer {
+    Committed(ExtendPointer),
+    Pending(WeakPointer), // or some ID, with TXG
+}
+
+
+*/
 
 impl ObjectPointer {
     pub const RAW_SIZE: usize = 8 + 8;// + super::ObjectType::RAW_SIZE;
