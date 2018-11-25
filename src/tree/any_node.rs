@@ -5,12 +5,42 @@ use crate::object_type::ObjectType;
 use std::fmt;
 
 use serde::de::{self, Deserialize, Deserializer, Visitor, SeqAccess};
+use serde::ser::{Serialize, Serializer, SerializeStruct};
+
 
 #[derive(Debug)]
-#[non_exhaustive]
 pub enum AnyNode<K, V> {
     LeafNode(LeafNode<K, V>),
     InternalNode(InternalNode<K>),
+}
+
+/*
+impl<K,V> AnyNode<K, V> {
+    fn get_object_type(&self) -> ObjectType {
+        match self {
+            AnyNode::LeafNode(_) => ObjectType::LeafNode,
+            AnyNode::InternalNode(_) => ObjectType::InternalNode,
+        }
+    }
+}
+*/
+
+impl<K: Copy + Ord + Serialize, V: Serialize> Serialize for AnyNode<K, V> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where S: Serializer,
+    {
+        let mut s = serializer.serialize_struct("AnyNode", 2)?;
+        match self {
+            AnyNode::LeafNode(n) => {
+                s.serialize_field("object_type", &ObjectType::LeafNode)?;
+                s.serialize_field("leaf_node", n)?;
+            }
+            AnyNode::InternalNode(n) => {
+                unimplemented!()
+            }
+        }
+        s.end()
+    }
 }
 
 impl<'de, K: serde::de::DeserializeOwned, V: serde::de::DeserializeOwned> Deserialize<'de> for AnyNode<K, V> {
@@ -52,7 +82,7 @@ impl<'de, K: serde::de::DeserializeOwned, V: serde::de::DeserializeOwned> Deseri
             }
         }
 
-        const FIELDS: &[&str] = &["object_type", "any node"];
+        const FIELDS: &[&str] = &["object_type", "leaf node", "internal_node"];
         deserializer.deserialize_struct("AnyNode", FIELDS, AnyNodeVisitor{_p:std::marker::PhantomData})
     }
 }

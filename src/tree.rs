@@ -11,7 +11,7 @@ pub use leaf_node::LeafNode;
 pub use internal_node::InternalNode;
 pub use any_node::AnyNode;
 
-#[derive(Debug, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct NodeEntry<K, V> {
     key: K,
     value: V,

@@ -9,7 +9,7 @@ use std::fmt;
 use serde::de::{self, Deserialize, Deserializer, Visitor, SeqAccess};
 use serde::ser::{Serialize, Serializer, SerializeStruct};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct LeafNode<K, V> {
     entries: Vec<NodeEntry<K, V>>
 }
@@ -18,14 +18,11 @@ impl<K: KeyTraits, V: ValTraits> Serialize for LeafNode<K, V> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where S: Serializer,
     {
-        let mut s = serializer.serialize_struct("LeafNode", 2)?;
-        s.serialize_field("object_type", &Self::RAW_TYPE)?;
+        let mut s = serializer.serialize_struct("LeafNode", 1)?;
         s.serialize_field("entries", &self.entries)?;
         s.end()
     }
 }
-
-
 
 impl<'de, K: serde::de::DeserializeOwned, V: serde::de::DeserializeOwned> Deserialize<'de> for LeafNode<K, V> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -69,6 +66,8 @@ impl<K: KeyTraits, V: ValTraits> LeafNode<K, V> {
         }
     }
 
+
+    // TODO delete
     pub fn insert_local(&mut self, mut entry: NodeEntry<K, V>) -> Option<V> {
         // algo invariant: the entries should be sorted
         debug_assert!(is_sorted(self.entries.iter().map(|l|{l.key})));

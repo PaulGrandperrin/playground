@@ -1,6 +1,5 @@
 use crate::object_pointer::ObjectPointer;
 use crate::file_backend::FileBackend;
-use crate::uberblock::Uberblock;
 
 // Kind of like ZFS's DMU (Data Management Unit)
 
@@ -11,23 +10,24 @@ pub struct SpaceManager {
 }
 
 impl SpaceManager {
-    pub const NUM_UBERBLOCKS: u64 = 3;
-
-    pub fn new() -> Self {
+    #[must_use]
+    pub fn new(offset: u64) -> Self {
         Self {
             block_dev: FileBackend::new(),
-            free_space_offset: Self::NUM_UBERBLOCKS * Uberblock::RAW_SIZE as u64,
+            free_space_offset: offset,
         }
     }
 
+    #[must_use]
     fn alloc<T: num::NumCast>(&mut self, size: T) -> u64 {
         let o = self.free_space_offset;
         self.free_space_offset += num::cast::<T, u64>(size).unwrap();
         o
     }
 
+    #[must_use]
     pub fn store<O>(&mut self, object: &O) -> ObjectPointer
-    where O: serde::Serialize + super::common::RawTyped {
+    where O: serde::Serialize {
         let object_mem = bincode::serialize(&object).unwrap();
         let len = object_mem.len() as u64;
         let offset = self.alloc(len);
@@ -35,6 +35,7 @@ impl SpaceManager {
         ObjectPointer::new(offset, len)
     }
 
+    #[must_use]
     pub fn retrieve<O>(&mut self, op: &ObjectPointer) -> O
     where O: serde::de::DeserializeOwned {
         let raw = self.block_dev.read(op.offset, op.len);

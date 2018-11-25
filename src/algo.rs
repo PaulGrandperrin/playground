@@ -1,28 +1,31 @@
+use crate::tree::any_node::AnyNode;
+use crate::space_manager::SpaceManager;
+use std::collections::BTreeMap;
 use crate::uberblock::Uberblock;
 use crate::object_type::ObjectType;
 use crate::object_pointer::ObjectPointer;
 use crate::context::Context;
 use crate::tree::NodeEntry;
 
-//fn insert(ctx: &mut Context, op: ObjectPointer, entry: NodeEntry<u64, u64>) -> (ObjectPointer, Option<u64>) {
-pub fn test(){
+pub fn merge(buffer: &BTreeMap<u64, u64>, trp: &ObjectPointer, sm: &mut SpaceManager)  {
+    let any_node = sm.retrieve::<AnyNode<u64,u64>>(trp);
+    match any_node {
+        AnyNode::LeafNode(node) => {
+            unimplemented!()
+            
+            //let it_buf = buffer.into_iter();
+            //let it_node = node.entries.into_iter();
 
-    std::process::exit(0);
+
+        },
+        AnyNode::InternalNode(node) => {
+            unimplemented!()
+        }
+    }
+
 }
 
-struct Test {
-    raw: Box<[u8]>,
-    u1: &'static u64,
-    s: &'static str,
-    u2: &'static u64,
 
-}
-
-impl Test {
-    pub fn u1(&self) -> &u64 { &self.u1}
-    pub fn s(&self) -> &str { &self.s}
-    pub fn u2(&self) -> &u64 { &self.u2}
-}
 
 
 //trait AllTraits<'a> = serde::Serialize + serde::de::Deserialize<'a> + std::fmt::Debug;

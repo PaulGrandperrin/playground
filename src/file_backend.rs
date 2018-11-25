@@ -9,6 +9,7 @@ pub struct FileBackend {
 }
 
 impl FileBackend {
+    #[must_use]
     pub fn new() -> FileBackend {
         let bd = OpenOptions::new()
         .read(true)
@@ -16,7 +17,7 @@ impl FileBackend {
         .create(true)
         .open("bd.raw").expect("failed to open bd.raw");
 
-    let log = OpenOptions::new()
+        let log = OpenOptions::new()
         .read(false)
         .append(true)
         .create(true)
@@ -28,6 +29,7 @@ impl FileBackend {
         }
     }
 
+    #[must_use]
     pub fn read(&mut self, offset: u64, length: u64) -> Box<[u8]> {
         self.bd.seek(SeekFrom::Start(offset)).unwrap();
         let mut data = vec![0;length as usize].into_boxed_slice();
@@ -35,6 +37,7 @@ impl FileBackend {
         data
     }
 
+    #[must_use]
     pub fn write(&mut self, offset: u64, data: &[u8]) {
         self.bd.seek(SeekFrom::Start(offset)).unwrap();
         self.bd.write_all(&data).expect("File.write_all failed");

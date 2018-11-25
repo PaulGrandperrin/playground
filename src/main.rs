@@ -12,8 +12,8 @@ mod context;
 //mod serialize;
 mod common; // RawSized
 mod space_manager;
-//mod cache;
-//mod algo; // Tree algorithm
+mod cached_space_manager;
+mod algo; // Tree algorithm
 
 use crate::object_pointer::ObjectPointer;
 use crate::context::Context;
@@ -34,7 +34,7 @@ fn main() {
     let mut ctx = Context::load().unwrap();
     dbg!(&ctx);
     let op = ctx.tree_root_pointer.clone();
-    let root = ctx.get::<AnyNode<u64,u64>>(&op);
+    let root = ctx.get(&op);
     dbg!(&root);
 }
 
