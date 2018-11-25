@@ -31,9 +31,11 @@ impl<O> CachedSpaceManager<O> {
     where O: serde::de::DeserializeOwned {
         match self.map.entry(op.offset) {
             Entry::Occupied(e) => {
+                println!("cache hit :-)");
                 e.get().clone()
             }
             Entry::Vacant(e) => {
+                println!("cache miss :-(");
                 let o = self.sm.retrieve::<O>(op);
                 e.insert(Rc::new(o)).clone()
             }

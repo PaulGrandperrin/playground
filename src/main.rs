@@ -21,19 +21,33 @@ use crate::tree::{AnyNode};
 
 fn main() {
     //algo::test();
-
+    println!("format and load");
     let mut ctx = Context::format_and_load();
+    println!("insert 1");
     ctx.insert(1, 1001);
+    println!("insert 2");
     ctx.insert(2, 1002);
+    println!("insert 3");
     ctx.insert(3, 1003);
+    println!("commit");
     ctx.commit();
+    println!("commit");
     ctx.commit();
+    println!("commit");
     ctx.commit();
+    println!("commit");
     ctx.commit();
 
+    let op = ctx.tree_root_pointer.clone();
+    println!("get root");
+    let root = ctx.get(&op);
+    dbg!(&root);
+
+    println!("load");
     let mut ctx = Context::load().unwrap();
     dbg!(&ctx);
     let op = ctx.tree_root_pointer.clone();
+    println!("get root");
     let root = ctx.get(&op);
     dbg!(&root);
 }
