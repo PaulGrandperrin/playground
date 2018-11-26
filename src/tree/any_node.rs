@@ -25,7 +25,7 @@ impl<K,V> AnyNode<K, V> {
 }
 */
 
-impl<K: Copy + Ord + Serialize, V: Serialize> Serialize for AnyNode<K, V> {
+impl<K: Serialize, V: Serialize> Serialize for AnyNode<K, V> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where S: Serializer,
     {

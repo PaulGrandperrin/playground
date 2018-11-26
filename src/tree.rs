@@ -3,6 +3,7 @@
 use super::object_type::ObjectType;
 use super::object_pointer::ObjectPointer;
 use super::common::RawTyped;
+use crate::serializable::Serializable;
 
 pub mod leaf_node;
 pub mod internal_node;
@@ -43,8 +44,8 @@ pub fn is_sorted<I: Iterator<Item=T>, T: PartialOrd>(mut it: I) -> bool {
 
 
 
-pub trait KeyTraits = serde::Serialize + Ord + Copy;
-pub trait ValTraits = serde::Serialize;
+pub trait KeyTraits = Serializable + Ord + Copy;
+pub trait ValTraits = Serializable;
 
 
 

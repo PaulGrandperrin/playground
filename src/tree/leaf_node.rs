@@ -14,7 +14,7 @@ pub struct LeafNode<K, V> {
     entries: Vec<NodeEntry<K, V>>
 }
 
-impl<K: KeyTraits, V: ValTraits> Serialize for LeafNode<K, V> {
+impl<K: serde::ser::Serialize, V: serde::ser::Serialize> Serialize for LeafNode<K, V> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where S: Serializer,
     {
