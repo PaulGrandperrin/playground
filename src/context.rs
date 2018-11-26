@@ -7,6 +7,7 @@ use super::cached_space_manager::CachedSpaceManager;
 use super::algo;
 use std::rc::Rc;
 use crate::serializable::Serializable;
+use crate::object_type::ObjectType;
 
 use itertools::Itertools;
 
@@ -42,10 +43,9 @@ impl Context {
     pub fn load() -> Result<Context, failure::Error> { // TODO move uberblock finding to SpaceManager
         let mut csm = CachedSpaceManager::new(Self::NUM_UBERBLOCKS * Uberblock::RAW_SIZE as u64);
         let ub = (0..Self::NUM_UBERBLOCKS).map(|i| {
+            let raw = csm.get_mut_block_dev().read(i as u64 * Uberblock::RAW_SIZE as u64, Uberblock::RAW_SIZE as u64);
             Ok::<_, failure::Error>(
-                csm.get_mut_sm().retrieve::<Uberblock>(
-                    &ObjectPointer::new(i as u64 * Uberblock::RAW_SIZE as u64, Uberblock::RAW_SIZE as u64)
-                )
+                Serializable::deserialize(&raw).unwrap()
             )
         }).fold_results(None::<Uberblock>, |acc, u: Uberblock| { // compute max if no error
             if let Some(acc) = acc {

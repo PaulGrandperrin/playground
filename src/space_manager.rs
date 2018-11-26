@@ -1,6 +1,7 @@
 use crate::object_pointer::ObjectPointer;
 use crate::file_backend::FileBackend;
 use crate::serializable::Serializable;
+use crate::common::RawTyped;
 
 // Kind of like ZFS's DMU (Data Management Unit)
 
@@ -28,12 +29,12 @@ impl SpaceManager {
 
     #[must_use]
     pub fn store<O>(&mut self, object: &O) -> ObjectPointer
-    where O: Serializable {
+    where O: Serializable + RawTyped {
         let object_mem = object.serialize().unwrap();
         let len = object_mem.len() as u64;
         let offset = self.alloc(len);
         self.block_dev.write(offset, &object_mem);
-        ObjectPointer::new(offset, len)
+        ObjectPointer::new(offset, len, O::RAW_TYPE)
     }
 
     #[must_use]

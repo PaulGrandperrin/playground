@@ -1,6 +1,7 @@
 use crate::object_pointer::ObjectPointer;
 use crate::space_manager::SpaceManager;
 use crate::serializable::Serializable;
+use crate::common::RawTyped;
 use std::collections::hash_map::Entry;
 use crate::file_backend::FileBackend;
 use std::rc::Rc;
@@ -21,7 +22,7 @@ impl<O> CachedSpaceManager<O> {
     }
 
     pub fn store(&mut self, object: impl Into<Rc<O>>) -> ObjectPointer
-    where O: Serializable {
+    where O: Serializable + RawTyped {
         let rco = object.into();
         let op = self.sm.store::<O>(&rco);
         self.map.insert(op.offset, rco);
