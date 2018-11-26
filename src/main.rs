@@ -9,7 +9,7 @@ mod uberblock;
 mod object_type;
 mod tree;
 mod context;
-//mod serialize;
+mod serializable;
 mod common; // RawSized
 mod space_manager;
 mod cached_space_manager;

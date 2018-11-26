@@ -6,7 +6,7 @@ use super::tree::{LeafNode, NodeEntry};
 use super::cached_space_manager::CachedSpaceManager;
 use super::algo;
 use std::rc::Rc;
-use std::ops::Deref;
+use crate::serializable::Serializable;
 
 use itertools::Itertools;
 
@@ -27,7 +27,7 @@ impl Context {
         let root_node = AnyNode::LeafNode(LeafNode::<u64, u64>::new());
         let trp = csm.store(root_node);
         let ub = Uberblock::new(0, trp.clone(), *csm.get_mut_free_space_offset());
-        let ub_mem = bincode::serialize(&ub).unwrap();
+        let ub_mem = ub.serialize().unwrap();
         csm.get_mut_block_dev().write(0 * Uberblock::RAW_SIZE as u64, &ub_mem);
         csm.get_mut_block_dev().write(1 * Uberblock::RAW_SIZE as u64, &ub_mem);
         csm.get_mut_block_dev().write(2 * Uberblock::RAW_SIZE as u64, &ub_mem);
@@ -75,7 +75,7 @@ impl Context {
 
         // write new uber
         let ub = Uberblock::new(self.tgx, self.tree_root_pointer.clone(), *self.csm.get_mut_free_space_offset());
-        let ub_mem = bincode::serialize(&ub).unwrap();
+        let ub_mem =ub.serialize().unwrap();
         let ub_offset = (self.tgx % Self::NUM_UBERBLOCKS) * Uberblock::RAW_SIZE as u64;
         self.csm.get_mut_block_dev().write(ub_offset, &ub_mem);
         self.tgx += 1;

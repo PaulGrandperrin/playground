@@ -1,5 +1,6 @@
 use crate::object_pointer::ObjectPointer;
 use crate::file_backend::FileBackend;
+use crate::serializable::Serializable;
 
 // Kind of like ZFS's DMU (Data Management Unit)
 
@@ -27,8 +28,8 @@ impl SpaceManager {
 
     #[must_use]
     pub fn store<O>(&mut self, object: &O) -> ObjectPointer
-    where O: serde::Serialize {
-        let object_mem = bincode::serialize(&object).unwrap();
+    where O: Serializable {
+        let object_mem = object.serialize().unwrap();
         let len = object_mem.len() as u64;
         let offset = self.alloc(len);
         self.block_dev.write(offset, &object_mem);
@@ -37,8 +38,8 @@ impl SpaceManager {
 
     #[must_use]
     pub fn retrieve<O>(&mut self, op: &ObjectPointer) -> O
-    where O: serde::de::DeserializeOwned {
+    where O: Serializable {
         let raw = self.block_dev.read(op.offset, op.len);
-        bincode::deserialize::<O>(&raw).unwrap() // FIXME: not zero-copy
+        Serializable::deserialize(&raw).unwrap() // FIXME: not zero-copy
     }
 }

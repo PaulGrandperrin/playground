@@ -1,0 +1,6 @@
+move ObjectType back inside ObjectPointer
+(add checksum to ObjectPointer)
+Abstract bincode::encode/decode with Custom Trait
+Implement buffered insert in COW B-tree
+Fuzz!
+Implement B^epsilon-Tree
