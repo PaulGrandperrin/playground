@@ -1,6 +1,40 @@
 move ObjectType back inside ObjectPointer
 (add checksum to ObjectPointer)
-Abstract bincode::encode/decode with Custom Trait
 Implement buffered insert in COW B-tree
 Fuzz!
 Implement B^epsilon-Tree
+
+
+(Allocate-on-flush/delayed allocation)
+
+
+struct ExtentPointer {
+    offset: u64,
+    len: u64,
+}
+
+struct ObjectPointer {
+    ep: ExtentPointer,
+
+}
+
+
+BlockDev
+# is owned by 1 ExtentManager
+- read(offset, len) -> data
+- write(offset, data)
+
+ExtentManager (could be cached, but not by default)
+# does space management
+# can be bypassed for Uberblock for instance
+# owns BlockDev
+# is owned by 1 CachedObjectManager
+- store(data) -> ep
+- retreive(ep) -> data
+
+CachedObjectManager (cached by default)
+# owns ExtentManager
++ hashmap(Enum())
+- store(object) -> ep
+- retreive::<O>(ep) -> object
+
