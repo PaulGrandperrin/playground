@@ -9,6 +9,7 @@ use std::rc::Rc;
 use crate::serializable::Serializable;
 use crate::object_type::ObjectType;
 use crate::any_object::{AnyObject, Object};
+use std::ops::Deref;
 
 use itertools::Itertools;
 
@@ -82,25 +83,21 @@ impl Context {
         self.tgx += 1;
     }
 
-    pub fn save(&mut self, object: Rc<impl Object>) -> ObjectPointer {
+    pub fn save<O: Object>(&mut self, object: O) -> ObjectPointer {
         self.csm.store(object)
     }
 
-    pub fn get<O>(&mut self, op: &ObjectPointer) -> Rc<O>
-    where O: Object {
+    pub fn get<O: Object>(&mut self, op: &ObjectPointer) -> Rc<O> {
         self.csm.retrieve(op)
     }
 
     pub fn insert(&mut self, k: u64, v: u64) {
         let trp = self.tree_root_pointer.clone();
-        let node = self.get::<LeafNode<u64, u64>>(&trp);
-
+        let mut node = self.get::<LeafNode<u64, u64>>(&trp).deref().clone();
         node.insert_local(NodeEntry::new(k, v));
         let op = self.save(node);
 
         self.tree_root_pointer = op;
-            
-        
     }
  
 }

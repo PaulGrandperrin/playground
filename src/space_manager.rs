@@ -28,8 +28,7 @@ impl SpaceManager {
     }
 
     #[must_use]
-    pub fn store<O>(&mut self, object: &O) -> ObjectPointer
-    where O: Serializable + RawTyped {
+    pub fn store<O: Serializable + RawTyped>(&mut self, object: &O) -> ObjectPointer {
         let object_mem = object.serialize().unwrap();
         let len = object_mem.len() as u64;
         let offset = self.alloc(len);
@@ -38,8 +37,7 @@ impl SpaceManager {
     }
 
     #[must_use]
-    pub fn retrieve<O>(&mut self, op: &ObjectPointer) -> O
-    where O: Serializable {
+    pub fn retrieve<O: Serializable>(&mut self, op: &ObjectPointer) -> O {
         let raw = self.block_dev.read(op.offset, op.len);
         Serializable::deserialize(&raw).unwrap() // FIXME: not zero-copy
     }

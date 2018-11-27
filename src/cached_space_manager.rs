@@ -23,19 +23,19 @@ impl CachedSpaceManager {
         }
     }
 
-    pub fn store(&mut self, object: Rc<impl Object>) -> ObjectPointer {
-        let rco = object.into();
-        let op = self.sm.store(&rco);
-        self.map.insert(op.offset, rco);
+    pub fn store<O: Object>(&mut self, object: O) -> ObjectPointer {
+        let op = self.sm.store(&object);
+        self.map.insert(op.offset, object.into());
         op
     }
 
-    pub fn retrieve<O>(&mut self, op: &ObjectPointer) -> Rc<O>
-    where O: Object {
+    pub fn retrieve<O: Object>(&mut self, op: &ObjectPointer) -> Rc<O> {
         match self.map.entry(op.offset) {
             Entry::Occupied(e) => {
                 println!("cache hit :-)");
+                let en: AnyObject = e.get().try_into().unwrap();//.try_into().unwrap();
                 (*e.get()).try_into().unwrap() //FIXME: compiler problem? e.get().deref().try_into()
+                // here, implicitly, we drop the old value
             }
             Entry::Vacant(e) => {
                 println!("cache miss :-(");
