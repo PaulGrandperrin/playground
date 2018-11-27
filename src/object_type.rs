@@ -3,8 +3,9 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
 pub enum ObjectType {
-    InternalNode = 0,
-    LeafNode = 1
+    Uberblock = 0,
+    InternalNode = 1,
+    LeafNode = 2,
 }
 
 impl ObjectType {
@@ -12,16 +13,18 @@ impl ObjectType {
 
     pub fn from_u8(n: u8) -> ObjectType {
         match n {
-            0 => ObjectType::InternalNode,
-            1 => ObjectType::LeafNode,
+            0 => ObjectType::Uberblock,
+            1 => ObjectType::InternalNode,
+            2 => ObjectType::LeafNode,
             _ => panic!("impossible ObjectType cast: {:?}", n)
         }
     }
 
     pub fn to_u8(&self) -> u8 {
         match self {
-            ObjectType::InternalNode => 0,
-            ObjectType::LeafNode => 1,
+            ObjectType::Uberblock => 0,
+            ObjectType::InternalNode => 1,
+            ObjectType::LeafNode => 2,
         }
     }
 }

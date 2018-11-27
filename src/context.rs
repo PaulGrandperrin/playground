@@ -13,7 +13,7 @@ use itertools::Itertools;
 
 #[derive(Debug)]
 pub struct Context {
-    pub csm: CachedSpaceManager<AnyNode<u64, u64>>,
+    pub csm: CachedSpaceManager,
     tgx: u64,
     pub tree_root_pointer: ObjectPointer,
     buffer: BTreeMap<u64, u64>,

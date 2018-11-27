@@ -1,4 +1,4 @@
-#![feature(non_exhaustive, dbg_macro, uniform_paths, trait_alias, never_type)]
+#![feature(trivial_bounds, non_exhaustive, dbg_macro, uniform_paths, trait_alias, never_type)]
 #![allow(dead_code, unused_variables, clippy::needless_pass_by_value)]
 
 use std::collections::BTreeMap;
@@ -14,6 +14,7 @@ mod common; // RawSized
 mod space_manager;
 mod cached_space_manager;
 mod algo; // Tree algorithm
+mod any_object;
 
 use crate::object_pointer::ObjectPointer;
 use crate::context::Context;

@@ -2,18 +2,19 @@ use crate::object_pointer::ObjectPointer;
 use crate::space_manager::SpaceManager;
 use crate::serializable::Serializable;
 use crate::common::RawTyped;
+use crate::any_object::{AnyObject, Object};
 use std::collections::hash_map::Entry;
 use crate::file_backend::FileBackend;
 use std::rc::Rc;
 use std::collections::HashMap; // maybe use https://github.com/Amanieu/hashbrown
 
 #[derive(Debug)]
-pub struct CachedSpaceManager<O> {
+pub struct CachedSpaceManager {
     sm: SpaceManager,
-    map: HashMap<u64, Rc<O>>, 
+    map: HashMap<u64, AnyObject>,
 }
 
-impl<O> CachedSpaceManager<O> {
+impl CachedSpaceManager {
     pub fn new(offset: u64) -> Self {
         Self {
             sm: SpaceManager::new(offset),
@@ -21,15 +22,16 @@ impl<O> CachedSpaceManager<O> {
         }
     }
 
-    pub fn store(&mut self, object: impl Into<Rc<O>>) -> ObjectPointer
-    where O: Serializable + RawTyped {
+    pub fn store<O>(&mut self, object: impl Into<Rc<O>>) -> ObjectPointer
+    where O: Object {
         let rco = object.into();
         let op = self.sm.store::<O>(&rco);
-        self.map.insert(op.offset, rco);
+        let any = Object::into_any(rco);
+        self.map.insert(op.offset, any);
         op
     }
 
-    pub fn retrieve(&mut self, op: &ObjectPointer) -> Rc<O>
+    pub fn retrieve<O>(&mut self, op: &ObjectPointer) -> Rc<O>
     where O: Serializable {
         match self.map.entry(op.offset) {
             Entry::Occupied(e) => {

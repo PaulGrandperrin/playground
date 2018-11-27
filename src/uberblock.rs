@@ -1,4 +1,6 @@
 use super::object_pointer::ObjectPointer;
+use crate::common::RawTyped;
+use crate::object_type::ObjectType;
 use std::io::Cursor;
 use failure::format_err;
 use std::mem;
@@ -62,6 +64,10 @@ impl Uberblock {
         self.to_bytes(&mut Cursor::new(&mut *mem));
         mem
     }
+}
+
+impl RawTyped for Uberblock {
+    const RAW_TYPE: ObjectType = ObjectType::Uberblock;
 }
 
 impl crate::common::RawSized for Uberblock {
