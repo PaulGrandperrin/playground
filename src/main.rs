@@ -18,7 +18,7 @@ mod any_object;
 
 use crate::object_pointer::ObjectPointer;
 use crate::context::Context;
-use crate::tree::{AnyNode};
+use crate::tree::{AnyNode,LeafNode};
 
 fn main() {
     //algo::test();
@@ -41,7 +41,7 @@ fn main() {
 
     let op = ctx.tree_root_pointer.clone();
     println!("get root");
-    let root = ctx.get(&op);
+    let root = ctx.get::<LeafNode<u64, u64>>(&op);
     dbg!(&root);
 
     println!("load");
@@ -49,7 +49,7 @@ fn main() {
     dbg!(&ctx);
     let op = ctx.tree_root_pointer.clone();
     println!("get root");
-    let root = ctx.get(&op);
+    let root = ctx.get::<LeafNode<u64, u64>>(&op);
     dbg!(&root);
 }
 

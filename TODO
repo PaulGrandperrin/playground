@@ -30,11 +30,11 @@ ExtentManager (could be cached, but not by default)
 # owns BlockDev
 # is owned by 1 CachedObjectManager
 - store(data) -> ep
-- retreive(ep) -> data
+- retrieve(ep) -> data
 
 CachedObjectManager (cached by default)
 # owns ExtentManager
 + hashmap(Enum())
 - store(object) -> ep
-- retreive::<O>(ep) -> object
+- retrieve::<O>(ep) -> object
 

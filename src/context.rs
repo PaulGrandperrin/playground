@@ -8,6 +8,7 @@ use super::algo;
 use std::rc::Rc;
 use crate::serializable::Serializable;
 use crate::object_type::ObjectType;
+use crate::any_object::{AnyObject, Object};
 
 use itertools::Itertools;
 
@@ -25,7 +26,7 @@ impl Context {
 
     pub fn format_and_load() -> Context { // TODO split
         let mut csm = CachedSpaceManager::new(Self::NUM_UBERBLOCKS * Uberblock::RAW_SIZE as u64);
-        let root_node = AnyNode::LeafNode(LeafNode::<u64, u64>::new());
+        let root_node = LeafNode::<u64, u64>::new();
         let trp = csm.store(root_node);
         let ub = Uberblock::new(0, trp.clone(), *csm.get_mut_free_space_offset());
         let ub_mem = ub.serialize().unwrap();
@@ -81,28 +82,25 @@ impl Context {
         self.tgx += 1;
     }
 
-    pub fn save(&mut self,object: impl Into<Rc<AnyNode<u64, u64>>>) -> ObjectPointer {
+    pub fn save(&mut self, object: Rc<impl Object>) -> ObjectPointer {
         self.csm.store(object)
     }
 
-    pub fn get(&mut self, op: &ObjectPointer) -> Rc<AnyNode<u64, u64>> {
+    pub fn get<O>(&mut self, op: &ObjectPointer) -> Rc<O>
+    where O: Object {
         self.csm.retrieve(op)
     }
 
     pub fn insert(&mut self, k: u64, v: u64) {
         let trp = self.tree_root_pointer.clone();
-        let any_node = self.get(&trp);
+        let node = self.get::<LeafNode<u64, u64>>(&trp);
 
-        self.tree_root_pointer = match any_node.as_ref() {
-            AnyNode::LeafNode(node) => {
-                let mut node = node.clone();
-                node.insert_local(NodeEntry::new(k, v));
-                self.save(AnyNode::LeafNode(node))
-            },
-            _ => {
-                unimplemented!()
-            }
-        };
+        node.insert_local(NodeEntry::new(k, v));
+        let op = self.save(node);
+
+        self.tree_root_pointer = op;
+            
+        
     }
  
 }

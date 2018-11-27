@@ -23,11 +23,10 @@ impl CachedSpaceManager {
         }
     }
 
-    pub fn store<O>(&mut self, object: impl Into<Rc<O>>) -> ObjectPointer
-    where O: Object {
+    pub fn store(&mut self, object: Rc<impl Object>) -> ObjectPointer {
         let rco = object.into();
-        let op = self.sm.store::<O>(&rco);
-        self.map.insert(op.offset, rco.into());
+        let op = self.sm.store(&rco);
+        self.map.insert(op.offset, rco);
         op
     }
 
