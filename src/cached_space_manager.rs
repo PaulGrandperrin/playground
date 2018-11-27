@@ -1,12 +1,13 @@
 use crate::object_pointer::ObjectPointer;
 use crate::space_manager::SpaceManager;
 use crate::serializable::Serializable;
-use crate::common::RawTyped;
 use crate::any_object::{AnyObject, Object};
 use std::collections::hash_map::Entry;
 use crate::file_backend::FileBackend;
 use std::rc::Rc;
 use std::collections::HashMap; // maybe use https://github.com/Amanieu/hashbrown
+use std::convert::TryInto;
+use std::ops::Deref;
 
 #[derive(Debug)]
 pub struct CachedSpaceManager {
@@ -26,22 +27,23 @@ impl CachedSpaceManager {
     where O: Object {
         let rco = object.into();
         let op = self.sm.store::<O>(&rco);
-        let any = Object::into_any(rco);
-        self.map.insert(op.offset, any);
+        self.map.insert(op.offset, rco.into());
         op
     }
 
     pub fn retrieve<O>(&mut self, op: &ObjectPointer) -> Rc<O>
-    where O: Serializable {
+    where O: Object {
         match self.map.entry(op.offset) {
             Entry::Occupied(e) => {
                 println!("cache hit :-)");
-                e.get().clone()
+                (*e.get()).try_into().unwrap() //FIXME: compiler problem? e.get().deref().try_into()
             }
             Entry::Vacant(e) => {
                 println!("cache miss :-(");
                 let o = self.sm.retrieve::<O>(op);
-                e.insert(Rc::new(o)).clone()
+                let rc = Rc::new(o);
+                let v = e.insert(rc.into());
+                rc
             }
         }
     }

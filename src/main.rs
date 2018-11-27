@@ -1,4 +1,4 @@
-#![feature(trivial_bounds, non_exhaustive, dbg_macro, uniform_paths, trait_alias, never_type)]
+#![feature(trivial_bounds, try_from, non_exhaustive, dbg_macro, uniform_paths, trait_alias, never_type)]
 #![allow(dead_code, unused_variables, clippy::needless_pass_by_value)]
 
 use std::collections::BTreeMap;
