@@ -19,22 +19,34 @@ struct ObjectPointer {
 }
 
 
-BlockDev
-# is owned by 1 ExtentManager
-- read(offset, len) -> data
-- write(offset, data)
+trait NVBlockDevice
+- read(offset, len) -> Vec<u8>
+- write(offset, Vec<u8>)
 
-ExtentManager (could be cached, but not by default)
-# does space management
-# can be bypassed for Uberblock for instance
-# owns BlockDev
-# is owned by 1 CachedObjectManager
-- store(data) -> ep
-- retrieve(ep) -> data
+trait NVObjectCache
+-get(&op) -> Rc<NVObject>
+-insert(&op, NVObject)
 
-CachedObjectManager (cached by default)
-# owns ExtentManager
-+ hashmap(Enum())
-- store(object) -> ep
-- retrieve::<O>(ep) -> object
+struct NVObjectDevice
+# responsible for serialization, compression, checksuming and type check and caching
++ NVBlockDevice
++ NVObjectCache
+- read(&op) -> Rc<NVObject>
+- write(offset, NVObject) -> op
+
+struct NVObjectManager
+# responsible for space allocation
++ NVObjectDevice
+-read(&op) -> Rc<NVObject>
+-write(NVObject) -> op
+-commit(Uberblock)
+-load(Uberblock)
+
+
+
+
+
+
+
+
 
