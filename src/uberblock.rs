@@ -6,6 +6,7 @@ use failure::format_err;
 use std::mem;
 use bytes::{Buf, BufMut};
 use std::fmt;
+use std::mem::size_of;
 
 const MAGIC_NUMBER: &[u8;8] = b"ReactDB0";
 
@@ -17,7 +18,7 @@ pub struct Uberblock {
 }
 
 impl Uberblock {
-    pub const RAW_SIZE: usize = 8 + 8 + 8 + super::ObjectPointer::RAW_SIZE;
+    pub const RAW_SIZE: usize = size_of::<u64>() * 2 + 8 + super::ObjectPointer::RAW_SIZE;
 
     pub fn new(txg: u64, op: ObjectPointer, fso: u64) -> Uberblock {
         Uberblock {
@@ -25,44 +26,6 @@ impl Uberblock {
             fso,
             op,
         }
-    }
-
-    pub fn from_bytes(bytes: &mut Cursor<&[u8]>) -> Result<Uberblock, failure::Error> {
-        assert!(bytes.remaining() >= Self::RAW_SIZE);
-
-        let mut magic= [0; 8];
-        bytes.copy_to_slice(&mut magic);
-        if magic != *MAGIC_NUMBER {
-            return Err(format_err!("Incorrect magic number. found: {:?}, expected: {:?}", magic, MAGIC_NUMBER));
-        }
-        let txg = bytes.get_u64_le();
-        let fso = bytes.get_u64_le();
-        let op = ObjectPointer::from_bytes(bytes)?;
-
-        assert!(bytes.remaining() == 0);
-
-        Ok(
-            Uberblock {
-                txg,
-                op,
-                fso,
-            }
-        )
-    }
-
-    pub fn to_bytes(&self, bytes: &mut Cursor<&mut [u8]>) {
-        assert!(bytes.remaining_mut() >= 8 + 8 + 8);
-        
-        bytes.put_slice(MAGIC_NUMBER);
-        bytes.put_u64_le(self.txg);
-        bytes.put_u64_le(self.fso);
-        self.op.to_bytes(bytes);
-    }
-
-    pub fn to_mem(&self) -> Box<[u8]> {
-        let mut mem: Box<[u8;41]> = Box::new(unsafe{mem::uninitialized()});
-        self.to_bytes(&mut Cursor::new(&mut *mem));
-        mem
     }
 }
 

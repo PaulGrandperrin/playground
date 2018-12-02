@@ -46,9 +46,14 @@ impl Context {
 
     pub fn insert(&mut self, k: u64, v: u64) {
         let mut leaf = self.nv_obj_mngr.get::<LeafNode<u64, u64>>(&self.op).deref().clone();
-        leaf.insert_local(NodeEntry::new(1, 1001));
+        leaf.insert_local(NodeEntry::new(k, v));
         self.op = self.nv_obj_mngr.store(leaf);
         self.nv_obj_mngr.commit(&self.op);
+    }
+
+    pub fn read_all(&mut self) {
+        let mut leaf = self.nv_obj_mngr.get::<LeafNode<u64, u64>>(&self.op).deref().clone();
+        println!("{:?}", leaf);
     }
  
 }

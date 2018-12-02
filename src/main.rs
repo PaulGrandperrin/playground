@@ -23,7 +23,6 @@ use crate::tree::{AnyNode,LeafNode};
 fn main() {
     println!("format and load");
     let mut ctx = Context::new();
-    dbg!(&ctx);
 
     println!("insert 1");
     ctx.insert(1, 1001);
@@ -40,6 +39,8 @@ fn main() {
 
     println!("insert 4");
     ctx.insert(4, 1004);
+
+    ctx.read_all();
 }
 
 

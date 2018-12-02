@@ -1,4 +1,5 @@
 use std::fmt;
+use std::mem::size_of;
 
 #[derive(Debug, Clone, PartialEq)]
 #[non_exhaustive]
@@ -9,7 +10,7 @@ pub enum ObjectType {
 }
 
 impl ObjectType {
-    pub const RAW_SIZE: usize = 1;
+    pub const RAW_SIZE: usize = size_of::<u8>();
 
     pub fn from_u8(n: u8) -> ObjectType {
         match n {

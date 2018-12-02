@@ -28,7 +28,6 @@ impl<'de, K: serde::de::DeserializeOwned, V: serde::de::DeserializeOwned> Deseri
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where D: Deserializer<'de>,
     {
-        
         struct LeafNodeVisitor<K, V> {
             _p: std::marker::PhantomData<(K, V)>
         }

@@ -27,7 +27,7 @@ impl NVObjectManager {
         // initialization
         let mut nv_blk_dev = FileBackend::new();
         let mut fso = Self::NUM_UBERBLOCKS * Uberblock::RAW_SIZE as u64;
-        let txg = 0;
+        let txg = 1;
 
         // convert obj to raw
         let obj_raw = Self::obj_to_raw(&obj).unwrap();
