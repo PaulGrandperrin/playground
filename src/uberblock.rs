@@ -11,19 +11,19 @@ const MAGIC_NUMBER: &[u8;8] = b"ReactDB0";
 
 #[derive(Debug)]
 pub struct Uberblock {
-    pub tgx: u64,
-    pub free_space_offset: u64,
-    pub tree_root_pointer: ObjectPointer,
+    pub txg: u64,
+    pub fso: u64,
+    pub op: ObjectPointer,
 }
 
 impl Uberblock {
     pub const RAW_SIZE: usize = 8 + 8 + 8 + super::ObjectPointer::RAW_SIZE;
 
-    pub fn new(tgx: u64, tree_root_pointer: ObjectPointer, free_space_offset: u64) -> Uberblock {
+    pub fn new(txg: u64, op: ObjectPointer, fso: u64) -> Uberblock {
         Uberblock {
-            tgx,
-            free_space_offset,
-            tree_root_pointer,
+            txg,
+            fso,
+            op,
         }
     }
 
@@ -35,17 +35,17 @@ impl Uberblock {
         if magic != *MAGIC_NUMBER {
             return Err(format_err!("Incorrect magic number. found: {:?}, expected: {:?}", magic, MAGIC_NUMBER));
         }
-        let tgx = bytes.get_u64_le();
-        let free_space_offset = bytes.get_u64_le();
-        let tree_root_pointer = ObjectPointer::from_bytes(bytes)?;
+        let txg = bytes.get_u64_le();
+        let fso = bytes.get_u64_le();
+        let op = ObjectPointer::from_bytes(bytes)?;
 
         assert!(bytes.remaining() == 0);
 
         Ok(
             Uberblock {
-                tgx,
-                tree_root_pointer,
-                free_space_offset,
+                txg,
+                op,
+                fso,
             }
         )
     }
@@ -54,9 +54,9 @@ impl Uberblock {
         assert!(bytes.remaining_mut() >= 8 + 8 + 8);
         
         bytes.put_slice(MAGIC_NUMBER);
-        bytes.put_u64_le(self.tgx);
-        bytes.put_u64_le(self.free_space_offset);
-        self.tree_root_pointer.to_bytes(bytes);
+        bytes.put_u64_le(self.txg);
+        bytes.put_u64_le(self.fso);
+        self.op.to_bytes(bytes);
     }
 
     pub fn to_mem(&self) -> Box<[u8]> {
@@ -82,9 +82,9 @@ impl Serialize for Uberblock {
     {
         let mut s = serializer.serialize_struct("Uberblock", 4)?;
         s.serialize_field("magic_number", MAGIC_NUMBER)?;
-        s.serialize_field("tgx", &self.tgx)?;
-        s.serialize_field("free_space_offset", &self.free_space_offset)?;
-        s.serialize_field("tree_root_pointer", &self.tree_root_pointer)?;
+        s.serialize_field("txg", &self.txg)?;
+        s.serialize_field("fso", &self.fso)?;
+        s.serialize_field("op", &self.op)?;
         s.end()
     }
 }
@@ -110,17 +110,17 @@ impl<'de> Deserialize<'de> for Uberblock {
                 if &magic != MAGIC_NUMBER {
                     return Err(de::Error::custom(format!("invalid magic number: {:?}", magic)))
                 }
-                let tgx = seq.next_element()?
+                let txg = seq.next_element()?
                     .ok_or_else(|| de::Error::invalid_length(1, &self))?;
-                let free_space_offset = seq.next_element()?
+                let fso = seq.next_element()?
                     .ok_or_else(|| de::Error::invalid_length(2, &self))?;
-                let tree_root_pointer = seq.next_element()?
+                let op = seq.next_element()?
                     .ok_or_else(|| de::Error::invalid_length(3, &self))?;
-                Ok(Uberblock::new(tgx, tree_root_pointer, free_space_offset))
+                Ok(Uberblock::new(txg, op, fso))
             }
         }
 
-        const FIELDS: &[&str] = &["magic_number", "tgx", "tree_root_pointer", "free_space_offset"];
+        const FIELDS: &[&str] = &["magic_number", "txg", "op", "fso"];
         deserializer.deserialize_struct("Uberblock", FIELDS, UberblockVisitor)
     }
 }

@@ -10,6 +10,7 @@ use std::borrow::Borrow;
 
 #[derive(Debug, Clone)]
 pub enum AnyObject {
+    None,
     Uberblock(Rc<Uberblock>),
     LeafNode(Rc<LeafNode<u64, u64>>),
     InternalNode(Rc<InternalNode<u64>>),

@@ -2,6 +2,8 @@ use std::fs::OpenOptions;
 use std::fs::File;
 use std::io::{Read, Seek, Write, SeekFrom};
 
+// TODO: abstract behing a trait named NVBlockDevice
+
 #[derive(Debug)]
 pub struct FileBackend {
     bd: File,
@@ -30,9 +32,9 @@ impl FileBackend {
     }
 
     #[must_use]
-    pub fn read(&mut self, offset: u64, length: u64) -> Box<[u8]> {
+    pub fn read(&mut self, offset: u64, len: u64) -> Box<[u8]> {
         self.bd.seek(SeekFrom::Start(offset)).unwrap();
-        let mut data = vec![0;length as usize].into_boxed_slice();
+        let mut data = vec![0;len as usize].into_boxed_slice();
         self.bd.read_exact(&mut data).expect("File::read_exact failed");
         data
     }

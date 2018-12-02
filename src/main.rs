@@ -11,8 +11,8 @@ mod tree;
 mod context;
 mod serializable;
 mod common; // RawSized
-mod space_manager;
-mod cached_space_manager;
+mod nv_obj_mngr;
+mod nv_obj_cache;
 mod algo; // Tree algorithm
 mod any_object;
 
@@ -21,36 +21,25 @@ use crate::context::Context;
 use crate::tree::{AnyNode,LeafNode};
 
 fn main() {
-    //algo::test();
     println!("format and load");
-    let mut ctx = Context::format_and_load();
+    let mut ctx = Context::new();
+    dbg!(&ctx);
+
     println!("insert 1");
     ctx.insert(1, 1001);
     println!("insert 2");
     ctx.insert(2, 1002);
     println!("insert 3");
     ctx.insert(3, 1003);
-    println!("commit");
-    ctx.commit();
-    println!("commit");
-    ctx.commit();
-    println!("commit");
-    ctx.commit();
-    println!("commit");
-    ctx.commit();
 
-    let op = ctx.tree_root_pointer.clone();
-    println!("get root");
-    let root = ctx.get::<LeafNode<u64, u64>>(&op);
-    dbg!(&root);
+    dbg!(&ctx);
 
     println!("load");
-    let mut ctx = Context::load().unwrap();
+    let mut ctx = Context::load();
     dbg!(&ctx);
-    let op = ctx.tree_root_pointer.clone();
-    println!("get root");
-    let root = ctx.get::<LeafNode<u64, u64>>(&op);
-    dbg!(&root);
+
+    println!("insert 4");
+    ctx.insert(4, 1004);
 }
 
 

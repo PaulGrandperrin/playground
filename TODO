@@ -18,29 +18,26 @@ struct ObjectPointer {
 
 }
 
+// done
+trait NVBlockDevice 
+- read(offset, len) -> Box<[u8]>
+- write(offset, &[u8])
 
-trait NVBlockDevice
-- read(offset, len) -> Vec<u8>
-- write(offset, Vec<u8>)
-
+// TODO
 trait NVObjectCache
 -get(&op) -> Rc<NVObject>
 -insert(&op, NVObject)
 
-struct NVObjectDevice
-# responsible for serialization, compression, checksuming and type check and caching
+// in progress
+struct NVObjectManager
+# responsible for space allocation, serialization, compression, checksuming and type check and caching
 + NVBlockDevice
 + NVObjectCache
-- read(&op) -> Rc<NVObject>
-- write(offset, NVObject) -> op
-
-struct NVObjectManager
-# responsible for space allocation
-+ NVObjectDevice
--read(&op) -> Rc<NVObject>
--write(NVObject) -> op
--commit(Uberblock)
--load(Uberblock)
+- get(&op) -> Rc<NVObject>
+- priv write(offset, NVObject) -> op
+- store(NVObject) -> op
+- commit(Uberblock)
+- load() -> Uberblock
 
 
 

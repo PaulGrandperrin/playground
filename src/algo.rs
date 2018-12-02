@@ -1,5 +1,4 @@
 use crate::tree::any_node::AnyNode;
-use crate::space_manager::SpaceManager;
 use std::collections::BTreeMap;
 use crate::uberblock::Uberblock;
 use crate::object_type::ObjectType;
@@ -7,6 +6,7 @@ use crate::object_pointer::ObjectPointer;
 use crate::context::Context;
 use crate::tree::NodeEntry;
 
+/*
 pub fn merge(buffer: &BTreeMap<u64, u64>, trp: &ObjectPointer, sm: &mut SpaceManager)  {
     let any_node = sm.retrieve::<AnyNode<u64,u64>>(trp);
     match any_node {
@@ -24,7 +24,7 @@ pub fn merge(buffer: &BTreeMap<u64, u64>, trp: &ObjectPointer, sm: &mut SpaceMan
     }
 
 }
-
+*/
 
 
 
