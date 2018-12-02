@@ -8,39 +8,6 @@ Implement B^epsilon-Tree
 (Allocate-on-flush/delayed allocation)
 
 
-struct ExtentPointer {
-    offset: u64,
-    len: u64,
-}
-
-struct ObjectPointer {
-    ep: ExtentPointer,
-
-}
-
-// done
-trait NVBlockDevice 
-- read(offset, len) -> Box<[u8]>
-- write(offset, &[u8])
-
-// TODO
-trait NVObjectCache
--get(&op) -> Rc<NVObject>
--insert(&op, NVObject)
-
-// in progress
-struct NVObjectManager
-# responsible for space allocation, serialization, compression, checksuming and type check and caching
-+ NVBlockDevice
-+ NVObjectCache
-- get(&op) -> Rc<NVObject>
-- priv write(offset, NVObject) -> op
-- store(NVObject) -> op
-- commit(Uberblock)
-- load() -> Uberblock
-
-
-
 
 
 
