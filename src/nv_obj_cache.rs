@@ -20,11 +20,9 @@ impl NVObjectCache {
     }
 
     pub fn get<O: Object>(&self, op: &ObjectPointer) -> Option<Rc<O>> {
-        let o = match self.map.get(&op.offset) {
-            Some(o) => o,
-            None => return None,
-        };
-        Some(o.try_into().unwrap())
+        self.map.get(&op.offset).map(|o|{
+            o.clone().try_into().unwrap()
+        })
     } 
 
     pub fn insert<O: Object>(&mut self, op: &ObjectPointer, obj: O) {

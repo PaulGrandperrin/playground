@@ -2,8 +2,9 @@ use crate::object_pointer::ObjectPointer;
 use crate::file_backend::FileBackend;
 use crate::serializable::Serializable;
 use crate::common::RawTyped;
-use crate::any_object::AnyObject;
+use crate::any_object::{AnyObject, Object};
 use crate::uberblock::Uberblock;
+use crate::nv_obj_cache::NVObjectCache;
 use std::rc::Rc;
 
 // Kind of like ZFS' zpool's  DMU (Data Management Unit)
@@ -16,18 +17,20 @@ pub struct NVObjectManager {
     txg: u64,
     /// free space offset
     fso: u64,
-    // TODO add cache
+    /// clean cache
+    ccache: NVObjectCache,
 }
 
 impl NVObjectManager {
     const NUM_UBERBLOCKS: u64 = 3;
 
     #[must_use]
-    pub fn new<O: Serializable + RawTyped>(obj: O) -> (Self, ObjectPointer) {
+    pub fn new<O: Object>(obj: O) -> (Self, ObjectPointer) {
         // initialization
         let mut nv_blk_dev = FileBackend::new();
         let mut fso = Self::NUM_UBERBLOCKS * Uberblock::RAW_SIZE as u64;
         let txg = 1;
+        let mut ccache = NVObjectCache::new();
 
         // convert obj to raw
         let obj_raw = Self::obj_to_raw(&obj).unwrap();
@@ -35,7 +38,7 @@ impl NVObjectManager {
 
         // write obj
         let offset = Self::alloc_impl(&mut fso, len);
-        let op = Self::write_impl(&mut nv_blk_dev, obj, obj_raw, offset);
+        let op = Self::write_impl(&mut ccache, &mut nv_blk_dev, obj, obj_raw, offset);
         
         // create uberblock
         let ub = Uberblock::new(txg, op.clone(), fso);
@@ -52,7 +55,7 @@ impl NVObjectManager {
                 nv_blk_dev: FileBackend::new(),
                 txg,
                 fso,
-                // TODO cache
+                ccache,
             },
             op
         )
@@ -62,6 +65,7 @@ impl NVObjectManager {
     pub fn load() -> (Self, ObjectPointer) {
         // initialization
         let mut nv_blk_dev = FileBackend::new();
+        let ccache = NVObjectCache::new();
 
         // find latest uberblock
         let mut latest_txg = 0;
@@ -83,7 +87,7 @@ impl NVObjectManager {
                 nv_blk_dev,
                 txg,
                 fso: ub.fso,
-                // TODO cache
+                ccache,
             },
             ub.op
         )
@@ -104,48 +108,28 @@ impl NVObjectManager {
     // TODO harmonize trait bounds
 
     #[must_use]
-    pub fn get<O: Serializable>(&mut self, op: &ObjectPointer) -> Rc<O> {
-        /*
-        match self.map.entry(op.offset) {
-            Entry::Occupied(e) => {
+    pub fn get<O: Object>(&mut self, op: &ObjectPointer) -> Rc<O> {
+        match self.ccache.get::<O>(op) {
+            Some(o) => {
                 println!("cache hit :-)");
-                let en: AnyObject = e.get().try_into().unwrap();//.try_into().unwrap();
-                (*e.get()).try_into().unwrap() //FIXME: compiler problem? e.get().deref().try_into()
-                // here, implicitly, we drop the old value
-            }
-            Entry::Vacant(e) => {
+                o
+            },
+            None => {
                 println!("cache miss :-(");
-                let o = self.sm.retrieve::<O>(op);
-                let rc = Rc::new(o);
-                let v = e.insert(rc.into());
-                rc
+                let raw = self.nv_blk_dev.read(op.offset, op.len);
+                let obj = Serializable::deserialize(&raw).unwrap(); // FIXME: not zero-copy
+                Rc::new(obj)
             }
         }
-    */
-        // TODO check cache
-        let raw = self.nv_blk_dev.read(op.offset, op.len);
-        let obj = Serializable::deserialize(&raw).unwrap(); // FIXME: not zero-copy
-        Rc::new(obj)
     }
 
     #[must_use]
-    fn write<O: Serializable + RawTyped>(&mut self, offset: u64, object: O) -> ObjectPointer {
-        let object_raw = Self::obj_to_raw(&object).unwrap();
-        let len = object_raw.len() as u64;
-
-        self.nv_blk_dev.write(offset, &object_raw);
-        ObjectPointer::new(offset, len, O::RAW_TYPE)
-    }
-
-    #[must_use]
-    pub fn store<O: Serializable + RawTyped>(&mut self, object: O) -> ObjectPointer {
-        let object_raw = Self::obj_to_raw(&object).unwrap();
-        let len = object_raw.len() as u64;
+    pub fn store<O: Object>(&mut self, obj: O) -> ObjectPointer {
+        let obj_raw = Self::obj_to_raw(&obj).unwrap();
+        let len = obj_raw.len() as u64;
 
         let offset = self.alloc(len);
-
-        self.nv_blk_dev.write(offset, &object_raw);
-        ObjectPointer::new(offset, len, O::RAW_TYPE)
+        Self::write_impl(&mut self.ccache, &mut self.nv_blk_dev, obj, obj_raw, offset)
     }
 
      #[must_use]
@@ -155,11 +139,16 @@ impl NVObjectManager {
 
     ////////
 
-    fn write_impl<O: Serializable + RawTyped>(nv_blk_dev: &mut FileBackend, obj: O, obj_raw: Vec<u8>, offset: u64) -> ObjectPointer {
+    fn write_impl<O: Object>(ccache: &mut NVObjectCache,nv_blk_dev: &mut FileBackend, obj: O, obj_raw: Vec<u8>, offset: u64) -> ObjectPointer {
         // TODO batch writes
-        // TODO cache obj
+
+        let op = ObjectPointer::new(offset, obj_raw.len() as u64, O::RAW_TYPE);
+
+        // insert in clean cache
+        ccache.insert(&op, obj);
+
         nv_blk_dev.write(offset, &obj_raw);
-        ObjectPointer::new(offset, obj_raw.len() as u64, O::RAW_TYPE)
+        op
     }
 
     fn obj_to_raw<O: Serializable + RawTyped>(object: &O) -> Result<Vec<u8>, failure::Error> {
