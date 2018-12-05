@@ -1,10 +1,4 @@
-use crate::tree::any_node::AnyNode;
-use std::collections::BTreeMap;
-use crate::uberblock::Uberblock;
-use crate::object_type::ObjectType;
-use crate::object_pointer::ObjectPointer;
-use crate::context::Context;
-use crate::tree::NodeEntry;
+
 
 /*
 pub fn merge(buffer: &BTreeMap<u64, u64>, trp: &ObjectPointer, sm: &mut SpaceManager)  {
@@ -12,7 +6,7 @@ pub fn merge(buffer: &BTreeMap<u64, u64>, trp: &ObjectPointer, sm: &mut SpaceMan
     match any_node {
         AnyNode::LeafNode(node) => {
             unimplemented!()
-            
+
             //let it_buf = buffer.into_iter();
             //let it_node = node.entries.into_iter();
 
@@ -26,8 +20,6 @@ pub fn merge(buffer: &BTreeMap<u64, u64>, trp: &ObjectPointer, sm: &mut SpaceMan
 }
 */
 
-
-
 //trait AllTraits<'a> = serde::Serialize + serde::de::Deserialize<'a> + std::fmt::Debug;
 /*
 fn bla<'a, K: 'a+serde::Serialize + serde::de::Deserialize<'a> + std::fmt::Debug>(t: Opaque<K>) {
@@ -36,7 +28,7 @@ fn bla<'a, K: 'a+serde::Serialize + serde::de::Deserialize<'a> + std::fmt::Debug
     println!("{:?}", b);
     //let b = [0,1,2];
     blu::<Opaque<K>>(&b);
-    
+
 }
 
 fn blu<'a, K: serde::de::Deserialize<'a> + std::fmt::Debug>(v: &'a[u8]) {

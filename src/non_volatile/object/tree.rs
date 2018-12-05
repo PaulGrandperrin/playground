@@ -1,16 +1,17 @@
 #![allow(clippy::block_in_if_condition_stmt)]
 
-use super::object_type::ObjectType;
+use crate::common::RawTyped;
 use super::object_pointer::ObjectPointer;
-use super::common::RawTyped;
-use crate::serializable::Serializable;
+use super::object_type::ObjectType;
+use super::super::serializable::Serializable;
 
-pub mod leaf_node;
-pub mod internal_node;
 pub mod any_node;
-pub use leaf_node::LeafNode;
-pub use internal_node::InternalNode;
+pub mod internal_node;
+pub mod leaf_node;
+
 pub use any_node::AnyNode;
+pub use internal_node::InternalNode;
+pub use leaf_node::LeafNode;
 
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct NodeEntry<K, V> {
@@ -20,18 +21,15 @@ pub struct NodeEntry<K, V> {
 
 impl<K: KeyTraits, V: ValTraits> NodeEntry<K, V> {
     pub fn new(key: K, value: V) -> Self {
-        Self {
-            key,
-            value,
-        }
+        Self { key, value }
     }
 }
 
 #[inline]
-pub fn is_sorted<I: Iterator<Item=T>, T: PartialOrd>(mut it: I) -> bool {
+pub fn is_sorted<I: Iterator<Item = T>, T: PartialOrd>(mut it: I) -> bool {
     let last: T = match it.next() {
         Some(i) => i,
-        None => return true
+        None => return true,
     };
 
     for i in it {
@@ -42,15 +40,8 @@ pub fn is_sorted<I: Iterator<Item=T>, T: PartialOrd>(mut it: I) -> bool {
     true
 }
 
-
-
-pub trait KeyTraits = Serializable + Ord + Copy;
-pub trait ValTraits = Serializable;
-
-
-
-
-
+trait KeyTraits = Serializable + Ord + Copy;
+trait ValTraits = Serializable;
 
 /*
 #[derive(Debug, serde_derive::Serialize)]
@@ -80,4 +71,3 @@ impl<K: KeyTraits, V: ValTraits> Node<K, V> {
 }
 
 */
-

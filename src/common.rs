@@ -1,4 +1,4 @@
-use super::object_type::ObjectType;
+use super::non_volatile::object::object_type::ObjectType;
 
 pub trait RawSized {
     /// size of seialized form in bytes

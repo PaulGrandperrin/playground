@@ -2,8 +2,6 @@ use std::fs::OpenOptions;
 use std::fs::File;
 use std::io::{Read, Seek, Write, SeekFrom};
 
-// TODO: abstract behing a trait named NVBlockDevice
-
 #[derive(Debug)]
 pub struct FileBackend {
     bd: File,

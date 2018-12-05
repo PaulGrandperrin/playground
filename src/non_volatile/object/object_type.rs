@@ -17,7 +17,7 @@ impl ObjectType {
             0 => ObjectType::Uberblock,
             1 => ObjectType::InternalNode,
             2 => ObjectType::LeafNode,
-            _ => panic!("impossible ObjectType cast: {:?}", n)
+            _ => panic!("impossible ObjectType cast: {:?}", n),
         }
     }
 
@@ -29,7 +29,6 @@ impl ObjectType {
         }
     }
 }
-
 
 impl serde::Serialize for ObjectType {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -48,11 +47,11 @@ impl<'de> serde::Deserialize<'de> for ObjectType {
         struct ObjectTypeVisitor;
         impl<'de> serde::de::Visitor<'de> for ObjectTypeVisitor {
             type Value = ObjectType;
-        
+
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
                 formatter.write_str("a byte")
             }
-        
+
             fn visit_u8<E>(self, value: u8) -> Result<Self::Value, E>
             where
                 E: serde::de::Error,

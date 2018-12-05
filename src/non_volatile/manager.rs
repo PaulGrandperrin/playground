@@ -1,10 +1,11 @@
-use crate::object_pointer::ObjectPointer;
-use crate::file_backend::FileBackend;
-use crate::serializable::Serializable;
 use crate::common::RawTyped;
-use crate::any_object::{AnyObject, Object};
-use crate::uberblock::Uberblock;
-use crate::nv_obj_cache::NVObjectCache;
+use super::object::any_rc_object::Object;
+use super::object::uberblock::Uberblock;
+use super::object::object_pointer::ObjectPointer;
+use super::cache::basic::NVObjectCache;
+use super::block_device::file_backend::FileBackend;
+use super::serializable::Serializable;
+
 use std::rc::Rc;
 
 // Kind of like ZFS' zpool's  DMU (Data Management Unit)
@@ -39,7 +40,7 @@ impl NVObjectManager {
         // write obj
         let offset = Self::alloc_impl(&mut fso, len);
         let op = Self::write_impl(&mut ccache, &mut nv_blk_dev, obj, obj_raw, offset);
-        
+
         // create uberblock
         let ub = Uberblock::new(txg, op.clone(), fso);
         let ub_raw = ub.serialize().unwrap();
@@ -57,7 +58,7 @@ impl NVObjectManager {
                 fso,
                 ccache,
             },
-            op
+            op,
         )
     }
 
@@ -89,11 +90,11 @@ impl NVObjectManager {
                 fso: ub.fso,
                 ccache,
             },
-            ub.op
+            ub.op,
         )
     }
 
-     #[must_use]
+    #[must_use]
     pub fn commit(&mut self, op: &ObjectPointer) {
         // TODO merge buffer's data into the B^ε-tree using COW
 
@@ -113,7 +114,7 @@ impl NVObjectManager {
             Some(o) => {
                 println!("cache hit :-)");
                 o
-            },
+            }
             None => {
                 println!("cache miss :-(");
                 let raw = self.nv_blk_dev.read(op.offset, op.len);
@@ -132,14 +133,20 @@ impl NVObjectManager {
         Self::write_impl(&mut self.ccache, &mut self.nv_blk_dev, obj, obj_raw, offset)
     }
 
-     #[must_use]
+    #[must_use]
     fn alloc<T: num::NumCast>(&mut self, size: T) -> u64 {
         Self::alloc_impl(&mut self.fso, size)
     }
 
     ////////
 
-    fn write_impl<O: Object>(ccache: &mut NVObjectCache,nv_blk_dev: &mut FileBackend, obj: O, obj_raw: Vec<u8>, offset: u64) -> ObjectPointer {
+    fn write_impl<O: Object>(
+        ccache: &mut NVObjectCache,
+        nv_blk_dev: &mut FileBackend,
+        obj: O,
+        obj_raw: Vec<u8>,
+        offset: u64,
+    ) -> ObjectPointer {
         // TODO batch writes
 
         let op = ObjectPointer::new(offset, obj_raw.len() as u64, O::RAW_TYPE);
@@ -163,6 +170,3 @@ impl NVObjectManager {
         o
     }
 }
-
-
-    

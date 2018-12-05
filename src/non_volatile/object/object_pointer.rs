@@ -3,11 +3,12 @@
 use super::object_type::ObjectType;
 use std::mem::size_of;
 
-use std::io::Cursor;
 use bytes::{Buf, BufMut};
+use std::io::Cursor;
 
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
-pub struct ObjectPointer { // TODO => rename ExtendPointer
+pub struct ObjectPointer {
+    // TODO => rename ExtendPointer
     pub offset: u64,
     pub len: u64,
     object_type: ObjectType,
@@ -37,4 +38,3 @@ impl ObjectPointer {
 impl crate::common::RawSized for ObjectPointer {
     const RAW_SIZE: usize = Self::RAW_SIZE;
 }
-
