@@ -1,10 +1,10 @@
+use super::super::object::any_rc_object::AnyRcObject;
 use super::super::object::any_rc_object::Object;
 use super::super::object::object_pointer::ObjectPointer;
-use super::super::object::any_rc_object::AnyRcObject;
 
-use std::rc::Rc;
+use std::collections::HashMap;
 use std::convert::TryInto;
-use std::collections::HashMap; // maybe use https://github.com/Amanieu/hashbrown
+use std::rc::Rc; // maybe use https://github.com/Amanieu/hashbrown
 
 // TODO rename AnyRcObject to cachedObject/cacheEntry
 

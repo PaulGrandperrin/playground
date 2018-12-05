@@ -1,6 +1,6 @@
 use super::object_pointer::ObjectPointer;
-use crate::common::RawTyped;
 use super::object_type::ObjectType;
+use crate::common::RawTyped;
 use bytes::{Buf, BufMut};
 use failure::format_err;
 use std::fmt;

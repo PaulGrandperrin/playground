@@ -1,9 +1,9 @@
 #![allow(clippy::block_in_if_condition_stmt)]
 
-use crate::common::RawTyped;
+use super::super::serializable::Serializable;
 use super::object_pointer::ObjectPointer;
 use super::object_type::ObjectType;
-use super::super::serializable::Serializable;
+use crate::common::RawTyped;
 
 pub mod any_node;
 pub mod internal_node;

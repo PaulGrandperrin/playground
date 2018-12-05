@@ -1,5 +1,3 @@
-
-
 /*
 pub fn merge(buffer: &BTreeMap<u64, u64>, trp: &ObjectPointer, sm: &mut SpaceManager)  {
     let any_node = sm.retrieve::<AnyNode<u64,u64>>(trp);

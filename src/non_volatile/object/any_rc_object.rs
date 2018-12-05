@@ -1,7 +1,7 @@
-use crate::common::RawTyped;
 use super::super::serializable::Serializable;
 use super::tree::{InternalNode, LeafNode};
 use super::uberblock::Uberblock;
+use crate::common::RawTyped;
 use failure::format_err;
 use std::borrow::Borrow;
 use std::convert::{TryFrom, TryInto};
@@ -27,11 +27,7 @@ impl<T: Foo + Bar> FooBar for T {}
 
 */
 
-pub trait Object = Serializable + RawTyped
-where   AnyRcObject: From<Self>,
-        AnyRcObject: From<Rc<Self>>,
-        Rc<Self>: TryFrom<AnyRcObject>,
-        <Rc<Self> as TryFrom<AnyRcObject>>::Error: Debug;
+trait Object = Serializable + RawTyped;
 
 /*
 pub trait Object: Serializable + RawTyped

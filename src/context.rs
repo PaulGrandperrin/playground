@@ -1,7 +1,7 @@
+use crate::non_volatile::manager::NVObjectManager;
 use crate::non_volatile::object::object_pointer::ObjectPointer;
 use crate::non_volatile::object::tree::LeafNode;
 use crate::non_volatile::object::tree::NodeEntry;
-use crate::non_volatile::manager::NVObjectManager;
 
 use std::collections::BTreeMap;
 use std::ops::Deref;

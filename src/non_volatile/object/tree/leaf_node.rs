@@ -1,8 +1,8 @@
-use crate::common::RawTyped;
 use super::super::object_type::ObjectType;
-use super::{KeyTraits, ValTraits};
 use super::is_sorted;
 use super::NodeEntry;
+use super::{KeyTraits, ValTraits};
+use crate::common::RawTyped;
 use std::fmt;
 use std::mem;
 
