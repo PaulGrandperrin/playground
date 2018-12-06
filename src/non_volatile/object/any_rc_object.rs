@@ -27,7 +27,10 @@ impl<T: Foo + Bar> FooBar for T {}
 
 */
 
-trait Object = Serializable + RawTyped;
+pub trait Object = Serializable + RawTyped where   AnyRcObject: From<Self>,
+        AnyRcObject: From<Rc<Self>>,
+        Rc<Self>: TryFrom<AnyRcObject>,
+        <Rc<Self> as TryFrom<AnyRcObject>>::Error: Debug;
 
 /*
 pub trait Object: Serializable + RawTyped
