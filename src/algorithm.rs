@@ -35,7 +35,7 @@ pub mod b_epsilon_tree {
             // we point to a leaf
             ObjectType::LeafNode => {
                 // get the leaf 
-                let leaf = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op);
+                let leaf = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op); // TODO: if the leaf was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
 
                 // prepare an iterator representing the view of the sorted merging
                 // of the leaf's entries and the buffer of operations
@@ -64,7 +64,7 @@ pub mod b_epsilon_tree {
                 new_leafs_ops
             },
             _ => {
-                unimplemented!()
+                unimplemented!("merge in InternalNode")
             }
         }
     }

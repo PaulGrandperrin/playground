@@ -44,6 +44,8 @@ fn main() {
     ctx.insert2(5, 1005);
     println!("insert 6");
     ctx.insert2(6, 1006);
+    println!("insert 7");
+    ctx.insert2(7, 1007);
 
     
 }
