@@ -41,7 +41,7 @@ impl Context {
         println!("Commiting");
         let mut swap_buffer = BTreeMap::new();
         std::mem::swap(&mut swap_buffer, &mut self.buffer);
-        self.head = algorithm::b_epsilon_tree::merge_bulk_operation(swap_buffer, &mut self.nv_obj_mngr, &self.head);
+        self.head = algorithm::b_epsilon_tree::merge_tree(swap_buffer, &mut self.nv_obj_mngr, &self.head);
         self.nv_obj_mngr.commit(&self.head);
     }
 
@@ -76,6 +76,7 @@ impl Context {
 
 impl Drop for Context {
     fn drop(&mut self) {
+        println!("dropping Context");
         self.commit();
     }
 }

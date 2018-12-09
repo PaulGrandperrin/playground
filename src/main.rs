@@ -5,7 +5,7 @@
     dbg_macro,
     uniform_paths,
     trait_alias,
-    never_type
+    never_type,
 )]
 #![allow(dead_code, unused_variables, clippy::needless_pass_by_value)]
 
@@ -39,6 +39,11 @@ fn main() {
     let mut ctx = Context::load();
     dbg!(&ctx);
     ctx.read_all();
+
+    println!("insert 5");
+    ctx.insert2(5, 1005);
+    println!("insert 6");
+    ctx.insert2(6, 1006);
 
     
 }

@@ -72,7 +72,7 @@ impl<K, V> RawTyped for LeafNode<K, V> {
     const RAW_TYPE: ObjectType = ObjectType::LeafNode;
 }
 
-impl<K: KeyTraits, V: ValTraits> LeafNode<K, V> {
+impl<K, V> LeafNode<K, V> {
     pub fn new() -> Self {
         Self {
             entries: Vec::new(),
@@ -80,7 +80,7 @@ impl<K: KeyTraits, V: ValTraits> LeafNode<K, V> {
     }
 
     // TODO delete
-    pub fn insert_local(&mut self, mut entry: NodeEntry<K, V>) -> Option<V> {
+    pub fn insert_local(&mut self, mut entry: NodeEntry<K, V>) -> Option<V> where K: Ord + Copy {
         // algo invariant: the entries should be sorted
         debug_assert!(is_sorted(self.entries.iter().map(|l| l.key)));
 

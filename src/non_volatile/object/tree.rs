@@ -19,7 +19,7 @@ pub struct NodeEntry<K, V> {
     pub value: V,
 }
 
-impl<K: KeyTraits, V: ValTraits> NodeEntry<K, V> {
+impl<K, V> NodeEntry<K, V> {
     pub fn new(key: K, value: V) -> Self {
         Self { key, value }
     }
@@ -40,7 +40,7 @@ pub fn is_sorted<I: Iterator<Item = T>, T: PartialOrd>(mut it: I) -> bool {
     true
 }
 
-pub trait KeyTraits = Serializable + Ord + Copy;
+pub trait KeyTraits = Serializable + Copy;
 pub trait ValTraits = Serializable;
 
 /*

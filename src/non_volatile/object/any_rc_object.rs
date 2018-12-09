@@ -94,3 +94,28 @@ impl TryFrom<AnyRcObject> for Rc<LeafNode<u64, u64>> {
         }
     }
 }
+
+impl From<InternalNode<u64>> for AnyRcObject {
+    fn from(this: InternalNode<u64>) -> Self {
+        AnyRcObject::InternalNode(Rc::new(this))
+    }
+}
+
+impl From<Rc<InternalNode<u64>>> for AnyRcObject {
+    fn from(this: Rc<InternalNode<u64>>) -> Self {
+        AnyRcObject::InternalNode(this)
+    }
+}
+
+impl TryFrom<AnyRcObject> for Rc<InternalNode<u64>> {
+    type Error = failure::Error;
+
+    fn try_from(this: AnyRcObject) -> Result<Self, Self::Error> {
+        match this {
+            AnyRcObject::InternalNode(n) => Ok(n),
+            _ => {
+                Err(format_err!("Cannot convert this AnyNode to a LeafNode")) // TODO better error message with trait
+            }
+        }
+    }
+}

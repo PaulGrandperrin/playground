@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::collections::LinkedList;
 
 use itertools::Itertools;
 
@@ -6,6 +7,7 @@ use crate::non_volatile::manager::NVObjectManager;
 use crate::non_volatile::object::object_pointer::ObjectPointer;
 use crate::non_volatile::object::object_type::ObjectType;
 use crate::non_volatile::object::tree::LeafNode;
+use crate::non_volatile::object::tree::InternalNode;
 use crate::non_volatile::object::tree::NodeEntry;
 
 pub mod b_epsilon_tree {
@@ -13,27 +15,53 @@ pub mod b_epsilon_tree {
 
     const B: usize = 5;
 
-    pub fn merge_bulk_operation(ops: BTreeMap<u64, u64>, nv_obj_mngr: &mut NVObjectManager, op: &ObjectPointer) -> ObjectPointer {
-        match op.object_type {
+    pub fn merge_tree(buffer: BTreeMap<u64, u64>, nv_obj_mngr: &mut NVObjectManager, op: &ObjectPointer) -> ObjectPointer {
+        let mut new_leafs_ops = merge_node(buffer, nv_obj_mngr, op);
+
+        if new_leafs_ops.len() == 1 {
+            new_leafs_ops.pop_back().unwrap().value // garanted to succeed
+        } else {
+            // we need to create a new InternalNode
+            let entries = new_leafs_ops.into_iter().collect();
+            let inter_node = InternalNode{entries}; // TODO maybe change type of Node entries to LinkedList
+            let op = nv_obj_mngr.store(inter_node);
+            op
+        }
+    }
+
+
+    pub fn merge_node(buffer: BTreeMap<u64, u64>, nv_obj_mngr: &mut NVObjectManager, node_op: &ObjectPointer) -> LinkedList<NodeEntry<u64,ObjectPointer>> {
+        match node_op.object_type {
             // we point to a leaf
             ObjectType::LeafNode => {
                 // get the leaf 
-                let leaf = nv_obj_mngr.get::<LeafNode<u64, u64>>(op);
-                // is the leaf big enough to merge with buffer
-                if leaf.entries.len() + ops.len() <= B {
-                    // do a sorted merge
-                    let it_leaf = leaf.entries.iter().map(|e| e.clone());
-                    let it_ops = ops.into_iter().map(|(k, v)| { NodeEntry::new(k, v)});
-                    let entries: Vec<_> = it_leaf.merge_by(it_ops, |a, b| { a.key <= b.key }).collect();
+                let leaf = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op);
+
+                // prepare an iterator representing the view of the sorted merging
+                // of the leaf's entries and the buffer of operations
+                let it_leaf = leaf.entries.iter().cloned(); // we clone because leaf is RO because it can be cached
+                let it_buffer = buffer.into_iter().map(|(k, v)| { NodeEntry::new(k, v)});
+                let it_entries = it_leaf.merge_by(it_buffer, |a, b| { a.key <= b.key });
+
+                // split those entries in chunks of B entries,
+                // one chunk for each resulting leaf
+                let chunks = it_entries.chunks(B);
+
+                // list of resulting object pointers to leafs
+                let mut new_leafs_ops = LinkedList::new();
+
+                // one chunk for each leaf
+                for chunk in chunks.into_iter() {
+                    let entries: Vec<_> = chunk.collect(); // TODO why type inference is not working? wait for chalk
+                    let key = entries.first().unwrap().key.clone(); // FIXME we can crash here, but let the fuzzer find it later
                     let new_leaf = LeafNode{entries};
 
                     // write new leaf to nv device
                     let op = nv_obj_mngr.store(new_leaf);
-
-                    op
-                } else {
-                    unimplemented!()
+                    new_leafs_ops.push_back(NodeEntry::new(key, op));
                 }
+
+                new_leafs_ops
             },
             _ => {
                 unimplemented!()
