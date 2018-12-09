@@ -1,6 +1,6 @@
 use super::object_pointer::ObjectPointer;
 use super::object_type::ObjectType;
-use crate::common::RawTyped;
+use crate::common::ConstObjType;
 use bytes::{Buf, BufMut};
 use failure::format_err;
 use std::fmt;
@@ -25,8 +25,8 @@ impl Uberblock {
     }
 }
 
-impl RawTyped for Uberblock {
-    const RAW_TYPE: ObjectType = ObjectType::Uberblock;
+impl ConstObjType for Uberblock {
+    const OBJ_TYPE: ObjectType = ObjectType::Uberblock;
 }
 
 impl crate::common::RawSized for Uberblock {

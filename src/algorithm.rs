@@ -23,7 +23,7 @@ pub mod b_epsilon_tree {
         } else {
             // we need to create a new InternalNode
             let entries = new_leafs_ops.into_iter().collect();
-            let inter_node = InternalNode{entries}; // TODO maybe change type of Node entries to LinkedList
+            let inter_node = InternalNode::from(entries); // TODO maybe change type of Node entries to LinkedList
             let op = nv_obj_mngr.store(inter_node);
             op
         }
@@ -54,7 +54,7 @@ pub mod b_epsilon_tree {
                 for chunk in chunks.into_iter() {
                     let entries: Vec<_> = chunk.collect(); // TODO why type inference is not working? wait for chalk
                     let key = entries.first().unwrap().key.clone(); // FIXME we can crash here, but let the fuzzer find it later
-                    let new_leaf = LeafNode{entries};
+                    let new_leaf = LeafNode::from(entries);
 
                     // write new leaf to nv device
                     let op = nv_obj_mngr.store(new_leaf);

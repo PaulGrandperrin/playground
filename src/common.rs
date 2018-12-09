@@ -5,6 +5,6 @@ pub trait RawSized {
     const RAW_SIZE: usize;
 }
 
-pub trait RawTyped {
-    const RAW_TYPE: ObjectType;
+pub trait ConstObjType {
+    const OBJ_TYPE: ObjectType;
 }

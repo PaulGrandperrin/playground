@@ -4,7 +4,7 @@ use super::object::any_rc_object::Object;
 use super::object::object_pointer::ObjectPointer;
 use super::object::uberblock::Uberblock;
 use super::serializable::Serializable;
-use crate::common::RawTyped;
+use crate::common::ConstObjType;
 
 use std::rc::Rc;
 
@@ -146,7 +146,7 @@ impl NVObjectManager {
     ) -> ObjectPointer {
         // TODO batch writes
 
-        let op = ObjectPointer::new(offset, obj_raw.len() as u64, O::RAW_TYPE);
+        let op = ObjectPointer::new(offset, obj_raw.len() as u64, O::OBJ_TYPE);
 
         // insert in clean cache
         ccache.insert(&op, obj);
@@ -155,7 +155,7 @@ impl NVObjectManager {
         op
     }
 
-    fn obj_to_raw<O: Serializable + RawTyped>(object: &O) -> Result<Vec<u8>, failure::Error> {
+    fn obj_to_raw<O: Serializable>(object: &O) -> Result<Vec<u8>, failure::Error> {
         object.serialize()
         // TODO compress, checksum...
     }
