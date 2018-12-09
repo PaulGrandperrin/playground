@@ -15,8 +15,8 @@ pub use leaf_node::LeafNode;
 
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct NodeEntry<K, V> {
-    key: K,
-    value: V,
+    pub key: K,
+    pub value: V,
 }
 
 impl<K: KeyTraits, V: ValTraits> NodeEntry<K, V> {
@@ -40,8 +40,8 @@ pub fn is_sorted<I: Iterator<Item = T>, T: PartialOrd>(mut it: I) -> bool {
     true
 }
 
-trait KeyTraits = Serializable + Ord + Copy;
-trait ValTraits = Serializable;
+pub trait KeyTraits = Serializable + Ord + Copy;
+pub trait ValTraits = Serializable;
 
 /*
 #[derive(Debug, serde_derive::Serialize)]

@@ -94,10 +94,7 @@ impl NVObjectManager {
         )
     }
 
-    #[must_use]
     pub fn commit(&mut self, op: &ObjectPointer) {
-        // TODO merge buffer's data into the B^ε-tree using COW
-
         // write new uber
         self.txg += 1;
         let ub = Uberblock::new(self.txg, op.clone(), self.fso);

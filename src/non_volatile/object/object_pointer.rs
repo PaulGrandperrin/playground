@@ -11,7 +11,7 @@ pub struct ObjectPointer {
     // TODO => rename ExtendPointer
     pub offset: u64,
     pub len: u64,
-    object_type: ObjectType,
+    pub object_type: ObjectType,
     // checksum
 }
 

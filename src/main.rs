@@ -23,22 +23,24 @@ fn main() {
     let mut ctx = Context::new();
 
     println!("insert 1");
-    ctx.insert(1, 1001);
+    ctx.insert2(1, 1001);
     println!("insert 2");
-    ctx.insert(2, 1002);
+    ctx.insert2(2, 1002);
     println!("insert 3");
-    ctx.insert(3, 1003);
+    ctx.insert2(3, 1003);
+    println!("insert 4");
+    ctx.insert2(4, 1004);
 
     dbg!(&ctx);
+    ctx.read_all();
+    drop(ctx);
 
     println!("load");
     let mut ctx = Context::load();
     dbg!(&ctx);
-
-    println!("insert 4");
-    ctx.insert(4, 1004);
-
     ctx.read_all();
+
+    
 }
 
 trait SortedMap<K: std::cmp::Ord, V> {

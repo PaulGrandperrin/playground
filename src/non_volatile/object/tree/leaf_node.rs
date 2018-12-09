@@ -11,7 +11,7 @@ use serde::ser::{Serialize, SerializeStruct, Serializer};
 
 #[derive(Debug, Clone)]
 pub struct LeafNode<K, V> {
-    entries: Vec<NodeEntry<K, V>>,
+    pub entries: Vec<NodeEntry<K, V>>,
 }
 
 impl<K: serde::ser::Serialize, V: serde::ser::Serialize> Serialize for LeafNode<K, V> {
