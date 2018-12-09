@@ -1,7 +1,7 @@
 #![allow(clippy::block_in_if_condition_stmt)]
 
-use std::marker::PhantomData;
 use std::fmt;
+use std::marker::PhantomData;
 use std::mem;
 
 use serde::de::{self, Deserialize, Deserializer, SeqAccess, Visitor};
@@ -47,10 +47,8 @@ pub fn is_sorted<I: Iterator<Item = T>, T: PartialOrd>(mut it: I) -> bool {
     true
 }
 
-pub trait KeyTraits = Serializable + Copy;
-pub trait ValTraits = Serializable;
-
-
+trait KeyTraits = Serializable + Copy;
+trait ValTraits = Serializable;
 
 #[derive(Debug, Clone)]
 pub struct LeafType;
@@ -114,7 +112,10 @@ impl<'de, K: serde::de::DeserializeOwned, V: serde::de::DeserializeOwned, OT> De
                     .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
 
-                Ok(Node { entries, _ot: PhantomData })
+                Ok(Node {
+                    entries,
+                    _ot: PhantomData,
+                })
             }
         }
 
@@ -145,7 +146,10 @@ impl<K, V, OT> Node<K, V, OT> {
     }
 
     // TODO delete
-    pub fn insert_local(&mut self, mut entry: NodeEntry<K, V>) -> Option<V> where K: Ord + Copy {
+    pub fn insert_local(&mut self, mut entry: NodeEntry<K, V>) -> Option<V>
+    where
+        K: Ord + Copy,
+    {
         // algo invariant: the entries should be sorted
         debug_assert!(is_sorted(self.entries.iter().map(|l| l.key)));
 

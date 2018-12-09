@@ -1,10 +1,9 @@
-use crate::non_volatile::manager::NVObjectManager;
-use crate::non_volatile::object::object_pointer::ObjectPointer;
-use crate::non_volatile::object::tree::{Node, NodeEntry, LeafNode, LeafType};
-use crate::non_volatile::object::object_type::ObjectType;
 use crate::algorithm;
 use crate::common::ConstObjType;
-
+use crate::non_volatile::manager::NVObjectManager;
+use crate::non_volatile::object::object_pointer::ObjectPointer;
+use crate::non_volatile::object::object_type::ObjectType;
+use crate::non_volatile::object::tree::{LeafNode, LeafType, Node, NodeEntry};
 
 use std::collections::BTreeMap;
 use std::ops::Deref;
@@ -43,7 +42,8 @@ impl Context {
         println!("Commiting");
         let mut swap_buffer = BTreeMap::new();
         std::mem::swap(&mut swap_buffer, &mut self.buffer);
-        self.head = algorithm::b_epsilon_tree::merge_tree(swap_buffer, &mut self.nv_obj_mngr, &self.head);
+        self.head =
+            algorithm::b_epsilon_tree::merge_tree(swap_buffer, &mut self.nv_obj_mngr, &self.head);
         self.nv_obj_mngr.commit(&self.head);
     }
 
@@ -60,7 +60,8 @@ impl Context {
 
     pub fn insert2(&mut self, k: u64, v: u64) {
         self.buffer.insert(k, v);
-        if self.buffer.len() >= 3 { // TODO make configurable
+        if self.buffer.len() >= 3 {
+            // TODO make configurable
             println!("Context's buffer full (3)");
             self.commit();
         }

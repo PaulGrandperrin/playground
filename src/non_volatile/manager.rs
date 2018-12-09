@@ -71,7 +71,8 @@ impl NVObjectManager {
         // find latest uberblock
         let mut latest_txg = 0;
         let mut latest_ub = None;
-        for i in 0..Self::NUM_UBERBLOCKS { // TODO maybe use try_fold or fold_result
+        for i in 0..Self::NUM_UBERBLOCKS {
+            // TODO maybe use try_fold or fold_result
             let raw = nv_blk_dev.read(i * Uberblock::RAW_SIZE as u64, Uberblock::RAW_SIZE as u64);
             let ub: Uberblock = Serializable::deserialize(&raw).unwrap(); // FIXME: not zero-copy
             if ub.txg > latest_txg {

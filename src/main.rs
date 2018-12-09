@@ -5,7 +5,7 @@
     dbg_macro,
     uniform_paths,
     trait_alias,
-    never_type,
+    never_type
 )]
 #![allow(dead_code, unused_variables, clippy::needless_pass_by_value)]
 
@@ -46,8 +46,6 @@ fn main() {
     ctx.insert2(6, 1006);
     println!("insert 7");
     ctx.insert2(7, 1007);
-
-    
 }
 
 trait SortedMap<K: std::cmp::Ord, V> {
