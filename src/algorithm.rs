@@ -26,6 +26,9 @@ pub mod b_epsilon_tree {
             new_leafs_ops.pop_back().unwrap().value // garanted to succeed
         } else {
             // we need to create a new InternalNode
+            if new_leafs_ops.len() > B {
+                unimplemented!("recursive tree root construction") // TODO implement
+            }
             let entries = new_leafs_ops.into_iter().collect();
             let inter_node = InternalNode::from(entries); // TODO maybe change type of Node entries to LinkedList
             let op = nv_obj_mngr.store(inter_node);
