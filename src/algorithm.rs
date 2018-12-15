@@ -16,10 +16,16 @@ pub mod b_epsilon_tree {
     const B: usize = 5;
 
     pub fn merge_tree(
-        buffer: BTreeMap<u64, u64>,
+        in_buffer: impl IntoIterator<Item=(u64, u64)>,
         nv_obj_mngr: &mut NVObjectManager,
         op: &ObjectPointer,
     ) -> ObjectPointer {
+        // transform the insertion optimized buffer into a custom structure optimized for merging into the Bε-tree
+        let mut buffer = Vec::new(); // TODO replace with custom ro-btree with cardinality metadata in nodes
+        for (k, v) in in_buffer.into_iter() {
+            buffer.push(NodeEntry::new(k, v));
+        }
+
         let mut new_leafs_ops = merge_rec(buffer, nv_obj_mngr, op);
 
         if new_leafs_ops.len() == 1 {
@@ -37,7 +43,7 @@ pub mod b_epsilon_tree {
     }
 
     pub fn merge_rec(
-        buffer: BTreeMap<u64, u64>,
+        buffer: Vec<NodeEntry<u64, u64>>,
         nv_obj_mngr: &mut NVObjectManager,
         node_op: &ObjectPointer,
     ) -> LinkedList<NodeEntry<u64, ObjectPointer>> {
@@ -50,7 +56,7 @@ pub mod b_epsilon_tree {
                 // prepare an iterator representing the view of the sorted merging
                 // of the leaf's entries and the buffer of operations
                 let it_leaf = leaf.entries.iter().cloned(); // we clone because leaf is RO because it can be cached
-                let it_buffer = buffer.into_iter().map(|(k, v)| NodeEntry::new(k, v));
+                let it_buffer = buffer.into_iter();
                 let it_entries = it_leaf.merge_by(it_buffer, |a, b| a.key <= b.key);
 
                 // split those entries in chunks of B entries,
