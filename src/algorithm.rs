@@ -42,10 +42,10 @@ pub mod b_epsilon_tree {
         node_op: &ObjectPointer,
     ) -> LinkedList<NodeEntry<u64, ObjectPointer>> {
         match node_op.object_type {
-            // we point to a leaf
+            // we point to a node
             ObjectType::LeafNode => {
                 // get the leaf
-                let leaf = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op); // TODO: if the leaf was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
+                let leaf = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
 
                 // prepare an iterator representing the view of the sorted merging
                 // of the leaf's entries and the buffer of operations
@@ -73,7 +73,12 @@ pub mod b_epsilon_tree {
 
                 new_leafs_ops
             }
-            _ => unimplemented!("merge in InternalNode"),
+            _ => {
+                    // get the node
+                    let internal = nv_obj_mngr.get::<InternalNode<u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
+
+                    unimplemented!("merge in InternalNode")
+                }
         }
     }
 }
