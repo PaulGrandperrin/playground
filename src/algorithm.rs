@@ -26,7 +26,7 @@ pub mod b_epsilon_tree {
             buffer.push(NodeEntry::new(k, v));
         }
 
-        let mut new_leafs_ops = merge_rec(buffer, nv_obj_mngr, op);
+        let mut new_leafs_ops = merge_rec(&buffer, nv_obj_mngr, op);
 
         if new_leafs_ops.len() == 1 {
             new_leafs_ops.pop_back().unwrap().value // garanted to succeed
@@ -42,8 +42,8 @@ pub mod b_epsilon_tree {
         }
     }
 
-    pub fn merge_rec(
-        buffer: Vec<NodeEntry<u64, u64>>,
+    fn merge_rec(
+        buffer: &[NodeEntry<u64, u64>],
         nv_obj_mngr: &mut NVObjectManager,
         node_op: &ObjectPointer,
     ) -> LinkedList<NodeEntry<u64, ObjectPointer>> {
@@ -56,7 +56,7 @@ pub mod b_epsilon_tree {
                 // prepare an iterator representing the view of the sorted merging
                 // of the leaf's entries and the buffer of operations
                 let it_leaf = leaf.entries.iter().cloned(); // we clone because leaf is RO because it can be cached
-                let it_buffer = buffer.into_iter();
+                let it_buffer = buffer.iter().cloned(); // TODO when it'll be possible, move instead of clone
                 let it_entries = it_leaf.merge_by(it_buffer, |a, b| a.key <= b.key);
 
                 // split those entries in chunks of B entries,
@@ -79,14 +79,80 @@ pub mod b_epsilon_tree {
 
                 new_leafs_ops
             }
-            _ => {
-                    // get the node
-                    let internal = nv_obj_mngr.get::<InternalNode<u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
+            ObjectType::InternalNode => {
+                let mut new_entries = LinkedList::new();
+                let mut old_entries_it = 0;
+                let mut buffer_it = 0;
 
-                    unimplemented!("merge in InternalNode")
+                // get the node
+                let internal = nv_obj_mngr.get::<InternalNode<u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
+
+                // find branch where to insert first element of buffer
+                
+                while buffer_it < buffer.len() {
+                    // find branch index where to insert the begining of the buffer
+                    let branch_index = match internal.entries[old_entries_it..].binary_search_by_key(&buffer[buffer_it].key, |entry| entry.key) {
+                        Ok(i) => i, // exact match
+                        Err(0) => 0, // key is smaller than first entry FIXME: maybe that's not supposed to happen
+                        Err(i) => i - 1, // match first bigger entry or end of slice
+                    };
+
+                    // now we need to find how many elements of the buffer we can insert in this branch
+                    // first find the bigger allow element
+                    let slice_to_insert_in_branch = if let Some(NodeEntry{key: max, value: _}) = internal.entries.get(branch_index + 1) {
+                        // there is another entry so our buffer needs to be right bounded
+                        let right_bound = match buffer.binary_search_by_key(max, |entry| entry.key) {
+                            Ok(i) => i - 1, // exact match
+                            Err(0) => unreachable!(), // key is smaller than first entry
+                            Err(i) => i - 1, // match first bigger entry or end of slice
+                        };
+                        &buffer[..right_bound]
+                    } else {
+                        &buffer[..]
+                    };
+
+                    // move directly skipped and untouched entries in new list
+                    for i in old_entries_it..branch_index {
+                        new_entries.push_back(internal.entries[i].clone()); // TODO when it'll be possible don't clone, but move
+                    }
+
+                    // append all new entries
+                    new_entries.append(&mut merge_rec(slice_to_insert_in_branch, nv_obj_mngr, &internal.entries[branch_index].value));
+                    old_entries_it = branch_index + 1;
                 }
+
+                // we now need to construct one, or many new nodes
+                let mut new_entries_it = new_entries.into_iter();
+                let mut new_nodes_ops = LinkedList::new();
+                loop {
+                    let mut chunked_entries = Vec::new();
+                    for i in 0..B {
+                        if let Some(e) = new_entries_it.next() {
+                            chunked_entries.push(e);
+                        } else {
+                            break;
+                        }
+                    }
+                    
+                    // loop breaking condition
+                    if chunked_entries.is_empty() {
+                        break;
+                    }
+
+                    let key = chunked_entries[0].key;
+                    let new_internal_node = InternalNode::from(chunked_entries);
+                    
+                    // write node
+                    let op = nv_obj_mngr.store(new_internal_node);
+                    new_nodes_ops.push_back(NodeEntry::new(key, op));
+                }
+                
+                new_nodes_ops
+            },
+            _ => unreachable!("expected a node object but got a {:?}", node_op.object_type)
         }
     }
+
 }
 
 /*
