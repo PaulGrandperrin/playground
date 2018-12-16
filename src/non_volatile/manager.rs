@@ -110,7 +110,7 @@ impl NVObjectManager {
     pub fn get<O: Object>(&mut self, op: &ObjectPointer) -> Rc<O> {
         match self.ccache.get::<O>(op) {
             Some(o) => {
-                println!("cache hit :-)");
+                //println!("cache hit :-)");
                 o
             }
             None => {

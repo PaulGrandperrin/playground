@@ -39,41 +39,24 @@ impl Context {
     }
 
     pub fn commit(&mut self) {
-        println!("Commiting");
+        println!("Commiting: {:?}", self.buffer);
         let mut swap_buffer = BTreeMap::new();
         std::mem::swap(&mut swap_buffer, &mut self.buffer);
         self.head =
             algorithm::b_epsilon_tree::merge_tree(swap_buffer, &mut self.nv_obj_mngr, &self.head);
         self.nv_obj_mngr.commit(&self.head);
+        self.debug();
     }
 
     pub fn insert(&mut self, k: u64, v: u64) {
-        let mut leaf = self
-            .nv_obj_mngr
-            .get::<LeafNode<u64, u64>>(&self.head)
-            .deref()
-            .clone();
-        leaf.insert_local(NodeEntry::new(k, v));
-        self.head = self.nv_obj_mngr.store(leaf);
-        self.nv_obj_mngr.commit(&self.head);
-    }
-
-    pub fn insert2(&mut self, k: u64, v: u64) {
         self.buffer.insert(k, v);
-        if self.buffer.len() >= 3 {
-            // TODO make configurable
-            println!("Context's buffer full (3)");
+        if self.buffer.len() >= 3 { // TODO make configurable
             self.commit();
         }
     }
 
-    pub fn read_all(&mut self) {
-        let mut leaf = self
-            .nv_obj_mngr
-            .get::<LeafNode<u64, u64>>(&self.head)
-            .deref()
-            .clone();
-        println!("{:?}", leaf);
+    pub fn debug(&mut self) {
+        algorithm::b_epsilon_tree::debug(&mut self.nv_obj_mngr, &self.head);
     }
 }
 

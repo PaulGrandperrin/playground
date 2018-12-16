@@ -13,7 +13,28 @@ use crate::non_volatile::object::tree::NodeEntry;
 pub mod b_epsilon_tree {
     use super::*;
 
-    const B: usize = 5;
+    const B: usize = 3;
+
+    pub fn debug(nv_obj_mngr: &mut NVObjectManager, node_op: &ObjectPointer) {
+        match node_op.object_type {
+            ObjectType::LeafNode => {
+                // get the leaf
+                let node = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op);
+                println!("@{} Leaf[{}]", node_op.offset, node.entries.iter().map(|e|{format!("{}=>{}", e.key, e.value)}).join(", "));
+            }
+            ObjectType::InternalNode => {
+                // get the internal node
+                let node = nv_obj_mngr.get::<InternalNode<u64>>(node_op);
+                println!("@{} Internal[{}]", node_op.offset, node.entries.iter().map(|e|{format!("{}=>@{}", e.key, e.value.offset)}).join(", "));
+
+                // recusively print childs
+                for c in &node.entries {
+                    self::debug(nv_obj_mngr, &c.value);
+                }
+            }
+            _ => unreachable!("expected a node object but got a {:?}", node_op.object_type)
+        }
+    }
 
     pub fn merge_tree(
         in_buffer: impl IntoIterator<Item=(u64, u64)>,
@@ -47,8 +68,8 @@ pub mod b_epsilon_tree {
         nv_obj_mngr: &mut NVObjectManager,
         node_op: &ObjectPointer,
     ) -> LinkedList<NodeEntry<u64, ObjectPointer>> {
+        println!("merging this buffer: {:?}", buffer);
         match node_op.object_type {
-            // we point to a node
             ObjectType::LeafNode => {
                 // get the leaf
                 let leaf = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
@@ -73,6 +94,7 @@ pub mod b_epsilon_tree {
                     let new_leaf = LeafNode::from(entries);
 
                     // write new leaf to nv device
+                    println!("writing leaf: {:?}", new_leaf);
                     let op = nv_obj_mngr.store(new_leaf);
                     new_leafs_ops.push_back(NodeEntry::new(key, op));
                 }
@@ -90,6 +112,7 @@ pub mod b_epsilon_tree {
                 // find branch where to insert first element of buffer
                 
                 while buffer_it < buffer.len() {
+                    println!("searching for {} in {:?}", &buffer[buffer_it].key, &internal.entries[old_entries_it..]);
                     // find branch index where to insert the begining of the buffer
                     let branch_index = match internal.entries[old_entries_it..].binary_search_by_key(&buffer[buffer_it].key, |entry| entry.key) {
                         Ok(i) => i, // exact match
@@ -97,27 +120,32 @@ pub mod b_epsilon_tree {
                         Err(i) => i - 1, // match first bigger entry or end of slice
                     };
 
+                    println!("branch_index: {}", branch_index);
+
                     // now we need to find how many elements of the buffer we can insert in this branch
                     // first find the bigger allow element
-                    let slice_to_insert_in_branch = if let Some(NodeEntry{key: max, value: _}) = internal.entries.get(branch_index + 1) {
+                    buffer_it = if let Some(NodeEntry{key: max, value: _}) = internal.entries.get(branch_index + 1) {
                         // there is another entry so our buffer needs to be right bounded
-                        let right_bound = match buffer.binary_search_by_key(max, |entry| entry.key) {
-                            Ok(i) => i - 1, // exact match
+                        dbg!(buffer);
+                        println!("max: {}", max);
+                        match buffer.binary_search_by_key(max, |entry| entry.key) {
+                            Ok(i) => i, // exact match
                             Err(0) => unreachable!(), // key is smaller than first entry
-                            Err(i) => i - 1, // match first bigger entry or end of slice
-                        };
-                        &buffer[..right_bound]
+                            Err(i) => i, // match first bigger entry or end of slice
+                        }
                     } else {
-                        &buffer[..]
+                        println!("selecting all buffer");
+                        buffer.len()
                     };
 
                     // move directly skipped and untouched entries in new list
                     for i in old_entries_it..branch_index {
+                        println!("moving directly to newlist: {:?}", internal.entries[i]);
                         new_entries.push_back(internal.entries[i].clone()); // TODO when it'll be possible don't clone, but move
                     }
 
                     // append all new entries
-                    new_entries.append(&mut merge_rec(slice_to_insert_in_branch, nv_obj_mngr, &internal.entries[branch_index].value));
+                    new_entries.append(&mut merge_rec(&buffer[..buffer_it], nv_obj_mngr, &internal.entries[branch_index].value));
                     old_entries_it = branch_index + 1;
                 }
 
