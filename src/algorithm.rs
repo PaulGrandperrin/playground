@@ -15,21 +15,21 @@ pub mod b_epsilon_tree {
 
     const B: usize = 3;
 
-    pub fn debug(nv_obj_mngr: &mut NVObjectManager, node_op: &ObjectPointer) {
+    pub fn debug(indent: usize, nv_obj_mngr: &mut NVObjectManager, node_op: &ObjectPointer) {
         match node_op.object_type {
             ObjectType::LeafNode => {
                 // get the leaf
                 let node = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op);
-                println!("@{} Leaf[{}]", node_op.offset, node.entries.iter().map(|e|{format!("{}=>{}", e.key, e.value)}).join(", "));
+                println!("@{:<6}{}Leaf[{}]", node_op.offset, "  ".repeat(indent),node.entries.iter().map(|e|{format!("{}=>{}", e.key, e.value)}).join(", "));
             }
             ObjectType::InternalNode => {
                 // get the internal node
                 let node = nv_obj_mngr.get::<InternalNode<u64>>(node_op);
-                println!("@{} Internal[{}]", node_op.offset, node.entries.iter().map(|e|{format!("{}=>@{}", e.key, e.value.offset)}).join(", "));
+                println!("@{:<6}{}Internal[{}]", node_op.offset, "  ".repeat(indent), node.entries.iter().map(|e|{format!("{}=>@{}", e.key, e.value.offset)}).join(", "));
 
                 // recusively print childs
                 for c in &node.entries {
-                    self::debug(nv_obj_mngr, &c.value);
+                    self::debug(indent + 1, nv_obj_mngr, &c.value);
                 }
             }
             _ => unreachable!("expected a node object but got a {:?}", node_op.object_type)
@@ -108,9 +108,10 @@ pub mod b_epsilon_tree {
 
                 // get the node
                 let internal = nv_obj_mngr.get::<InternalNode<u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
+                println!("read at {}: {:?}", node_op.offset, internal);
 
+                assert!(internal.entries.len() > 0); // FIXME replace with real value when I know it
                 // find branch where to insert first element of buffer
-                
                 while buffer_it < buffer.len() {
                     println!("searching for {} in {:?}", &buffer[buffer_it].key, &internal.entries[old_entries_it..]);
                     // find branch index where to insert the begining of the buffer
@@ -147,6 +148,12 @@ pub mod b_epsilon_tree {
                     // append all new entries
                     new_entries.append(&mut merge_rec(&buffer[..buffer_it], nv_obj_mngr, &internal.entries[branch_index].value));
                     old_entries_it = branch_index + 1;
+                }
+
+                 // move all remaining entries
+                for i in old_entries_it..internal.entries.len() {
+                    println!("moving directly to newlist: {:?}", internal.entries[i]);
+                    new_entries.push_back(internal.entries[i].clone()); // TODO when it'll be possible don't clone, but move
                 }
 
                 // we now need to construct one, or many new nodes

@@ -56,7 +56,7 @@ impl Context {
     }
 
     pub fn debug(&mut self) {
-        algorithm::b_epsilon_tree::debug(&mut self.nv_obj_mngr, &self.head);
+        algorithm::b_epsilon_tree::debug(0, &mut self.nv_obj_mngr, &self.head);
     }
 }
 

@@ -22,10 +22,30 @@ fn main() {
     println!("format and load");
     let mut ctx = Context::new();
 
-    for i in 1..20 {
+    for i in 1..19 {
         println!("insert {}", i);
         ctx.insert(i, 1000+i);
     }
+
+    ctx.commit();
+
+    let i=20;
+    println!("insert {}", i);
+    ctx.insert(i, 1000+i);
+
+    let i=21;
+    println!("insert {}", i);
+    ctx.insert(i, 1000+i);
+    
+    let i=22;
+    println!("insert {}", i);
+    ctx.insert(i, 1000+i);
+
+    //ctx.commit();
+
+    let i=19;
+    println!("insert {}", i);
+    ctx.insert(i, 1000+i);
 
 
     //dbg!(&ctx);
