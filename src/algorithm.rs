@@ -13,7 +13,7 @@ use crate::non_volatile::object::tree::NodeEntry;
 pub mod b_epsilon_tree {
     use super::*;
 
-    const B: usize = 3;
+    const B: usize = 5;
 
     pub fn debug(indent: usize, nv_obj_mngr: &mut NVObjectManager, node_op: &ObjectPointer) {
         match node_op.object_type {
@@ -156,30 +156,39 @@ pub mod b_epsilon_tree {
                     new_entries.push_back(internal.entries[i].clone()); // TODO when it'll be possible don't clone, but move
                 }
 
-                // we now need to construct one, or many new nodes
+                // Compute the length of newly created chunks
+                // We want to minimize the number of chunks and maximize their occupancy.
+                // This might not be the best strategy, but I think it is ;-)
+                // It's quite complex to explain, but in the end, the reason that makes me think
+                // that it's the best stragegy is because we heavily batch inserts and we do copy-on-write.
+                let num_entries = new_entries.len() as u64;
+                let total_chunk_num = (num_entries as f64 / B as f64).ceil() as u64;
+                let smaller_chunk_len = num_entries / total_chunk_num;
+                let bigger_chunk_num = num_entries % smaller_chunk_len;
+                let bigger_chunk_len = smaller_chunk_len + 1;
+                let smaller_chunk_num =  (num_entries - bigger_chunk_len * bigger_chunk_num) / smaller_chunk_len;
+
                 let mut new_entries_it = new_entries.into_iter();
                 let mut new_nodes_ops = LinkedList::new();
-                loop {
-                    let mut chunked_entries = Vec::new();
-                    for i in 0..B {
-                        if let Some(e) = new_entries_it.next() {
-                            chunked_entries.push(e);
-                        } else {
-                            break;
-                        }
-                    }
-                    
-                    // loop breaking condition
-                    if chunked_entries.is_empty() {
-                        break;
-                    }
 
-                    let key = chunked_entries[0].key;
-                    let new_internal_node = InternalNode::from(chunked_entries);
-                    
-                    // write node
-                    let op = nv_obj_mngr.store(new_internal_node);
-                    new_nodes_ops.push_back(NodeEntry::new(key, op));
+                for (chunk_len, chunk_num) in &[(bigger_chunk_len, bigger_chunk_num),(smaller_chunk_len, smaller_chunk_num)] {
+                    for _ in 0..*chunk_num {
+                        let mut chunked_entries = Vec::new();
+                        for i in 0..*chunk_len {
+                            if let Some(e) = new_entries_it.next() {
+                                chunked_entries.push(e);
+                            } else {
+                                unreachable!();
+                            }
+                        }
+
+                        let key = chunked_entries[0].key;
+                        let new_internal_node = InternalNode::from(chunked_entries);
+                        
+                        // write node
+                        let op = nv_obj_mngr.store(new_internal_node);
+                        new_nodes_ops.push_back(NodeEntry::new(key, op));
+                    }
                 }
                 
                 new_nodes_ops
