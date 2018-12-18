@@ -20,12 +20,12 @@ pub mod b_epsilon_tree {
             ObjectType::LeafNode => {
                 // get the leaf
                 let node = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op);
-                println!("@{:<6}{}Leaf[{}]", node_op.offset, "  ".repeat(indent),node.entries.iter().map(|e|{format!("{}=>{}", e.key, e.value)}).join(", "));
+                println!("{:>6} {}Leaf[{}]", format!("@{}", node_op.offset), "  ".repeat(indent),node.entries.iter().map(|e|{format!("{}:{}", e.key, e.value)}).join(", "));
             }
             ObjectType::InternalNode => {
                 // get the internal node
                 let node = nv_obj_mngr.get::<InternalNode<u64>>(node_op);
-                println!("@{:<6}{}Internal[{}]", node_op.offset, "  ".repeat(indent), node.entries.iter().map(|e|{format!("{}=>@{}", e.key, e.value.offset)}).join(", "));
+                println!("{:>6} {}Internal[{}]", format!("@{}", node_op.offset), "  ".repeat(indent), node.entries.iter().map(|e|{format!("{}:@{}", e.key, e.value.offset)}).join(", "));
 
                 // recusively print childs
                 for c in &node.entries {
