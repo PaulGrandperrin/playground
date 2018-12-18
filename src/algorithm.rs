@@ -178,7 +178,10 @@ pub mod b_epsilon_tree {
                             if let Some(e) = new_entries_it.next() {
                                 chunked_entries.push(e);
                             } else {
+                                #[cfg(debug_assertions)]
                                 unreachable!();
+                                #[cfg(not(debug_assertions))]
+                                unsafe {std::hint::unreachable_unchecked()}; // YOLO
                             }
                         }
 
