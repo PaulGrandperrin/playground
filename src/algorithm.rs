@@ -157,7 +157,12 @@ pub mod b_epsilon_tree {
                 }
 
                 // Compute the length of newly created chunks
-                // We want to minimize the number of chunks and maximize their occupancy.
+                // 
+                // We want to minimize the number of chunks and maximize their occupancy while also
+                // spreading as evenly as possible the branches between the internal nodes.
+                // The consequence is that there will be at maximum 2 kind of nodes created:
+                // one with a bigger size and one with a smaller size. And their sizes will differ by exactly one.
+                // 
                 // This might not be the best strategy, but I think it is ;-)
                 // It's quite complex to explain, but in the end, the reason that makes me think
                 // that it's the best stragegy is because we heavily batch inserts and we do copy-on-write.

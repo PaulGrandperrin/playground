@@ -22,7 +22,7 @@ fn main() {
     println!("format and load");
     let mut ctx = Context::new();
 
-    for i in 1..1000 {
+    for i in 1..30 {
         println!("insert {}", i);
         ctx.insert(i, 1000+i);
     }
