@@ -47,20 +47,13 @@ pub mod b_epsilon_tree {
             buffer.push(NodeEntry::new(k, v));
         }
 
-        let mut new_leafs_ops = merge_rec(&buffer, nv_obj_mngr, op);
+        let mut new_childs_ops = merge_rec(&buffer, nv_obj_mngr, op);
 
-        if new_leafs_ops.len() == 1 {
-            new_leafs_ops.pop_back().unwrap().value // garanted to succeed
-        } else {
-            // we need to create a new InternalNode
-            if new_leafs_ops.len() > B {
-                unimplemented!("recursive tree root construction") // TODO implement
-            }
-            let entries = new_leafs_ops.into_iter().collect();
-            let inter_node = InternalNode::from(entries); // TODO maybe change type of Node entries to LinkedList
-            let op = nv_obj_mngr.store(inter_node);
-            op
+        while new_childs_ops.len() != 1 {
+            new_childs_ops = reduce(new_childs_ops, nv_obj_mngr);
         }
+
+        new_childs_ops.pop_back().unwrap().value // garanted to succeed
     }
 
     fn merge_rec(
@@ -156,53 +149,57 @@ pub mod b_epsilon_tree {
                     new_entries.push_back(internal.entries[i].clone()); // TODO when it'll be possible don't clone, but move
                 }
 
-                // Compute the length of newly created chunks
-                // 
-                // We want to minimize the number of chunks and maximize their occupancy while also
-                // spreading as evenly as possible the branches between the internal nodes.
-                // The consequence is that there will be at maximum 2 kind of nodes created:
-                // one with a bigger size and one with a smaller size. And their sizes will differ by exactly one.
-                // 
-                // This might not be the best strategy, but I think it is ;-)
-                // It's quite complex to explain, but in the end, the reason that makes me think
-                // that it's the best stragegy is because we heavily batch inserts and we do copy-on-write.
-                let num_entries = new_entries.len() as u64;
-                let total_chunk_num = (num_entries as f64 / B as f64).ceil() as u64;
-                let smaller_chunk_len = num_entries / total_chunk_num;
-                let bigger_chunk_num = num_entries % smaller_chunk_len;
-                let bigger_chunk_len = smaller_chunk_len + 1;
-                let smaller_chunk_num =  (num_entries - bigger_chunk_len * bigger_chunk_num) / smaller_chunk_len;
-
-                let mut new_entries_it = new_entries.into_iter();
-                let mut new_nodes_ops = LinkedList::new();
-
-                for (chunk_len, chunk_num) in &[(bigger_chunk_len, bigger_chunk_num),(smaller_chunk_len, smaller_chunk_num)] {
-                    for _ in 0..*chunk_num {
-                        let mut chunked_entries = Vec::new();
-                        for i in 0..*chunk_len {
-                            if let Some(e) = new_entries_it.next() {
-                                chunked_entries.push(e);
-                            } else {
-                                #[cfg(debug_assertions)]
-                                unreachable!();
-                                #[cfg(not(debug_assertions))]
-                                unsafe {std::hint::unreachable_unchecked()}; // YOLO
-                            }
-                        }
-
-                        let key = chunked_entries[0].key;
-                        let new_internal_node = InternalNode::from(chunked_entries);
-                        
-                        // write node
-                        let op = nv_obj_mngr.store(new_internal_node);
-                        new_nodes_ops.push_back(NodeEntry::new(key, op));
-                    }
-                }
-                
-                new_nodes_ops
+                reduce(new_entries, nv_obj_mngr)
             },
             _ => unreachable!("expected a node object but got a {:?}", node_op.object_type)
         }
+    }
+
+    fn reduce(new_entries: LinkedList<NodeEntry<u64,ObjectPointer>>, nv_obj_mngr: &mut NVObjectManager) -> LinkedList<NodeEntry<u64, ObjectPointer>> {
+        // Compute the length of newly created chunks
+        // 
+        // We want to minimize the number of chunks and maximize their occupancy while also
+        // spreading as evenly as possible the branches between the internal nodes.
+        // The consequence is that there will be at maximum 2 kind of nodes created:
+        // one with a bigger size and one with a smaller size. And their sizes will differ by exactly one.
+        // 
+        // This might not be the best strategy, but I think it is ;-)
+        // It's quite complex to explain, but in the end, the reason that makes me think
+        // that it's the best stragegy is because we heavily batch inserts and we do copy-on-write.
+        let num_entries = new_entries.len() as u64;
+        let total_chunk_num = (num_entries as f64 / B as f64).ceil() as u64;
+        let smaller_chunk_len = num_entries / total_chunk_num;
+        let bigger_chunk_num = num_entries % smaller_chunk_len;
+        let bigger_chunk_len = smaller_chunk_len + 1;
+        let smaller_chunk_num =  (num_entries - bigger_chunk_len * bigger_chunk_num) / smaller_chunk_len;
+
+        let mut new_entries_it = new_entries.into_iter();
+        let mut new_nodes_ops = LinkedList::new();
+
+        for (chunk_len, chunk_num) in &[(bigger_chunk_len, bigger_chunk_num),(smaller_chunk_len, smaller_chunk_num)] {
+            for _ in 0..*chunk_num {
+                let mut chunked_entries = Vec::new();
+                for i in 0..*chunk_len {
+                    if let Some(e) = new_entries_it.next() {
+                        chunked_entries.push(e);
+                    } else {
+                        #[cfg(debug_assertions)]
+                        unreachable!();
+                        #[cfg(not(debug_assertions))]
+                        unsafe {std::hint::unreachable_unchecked()}; // YOLO
+                    }
+                }
+
+                let key = chunked_entries[0].key;
+                let new_internal_node = InternalNode::from(chunked_entries);
+                
+                // write node
+                let op = nv_obj_mngr.store(new_internal_node);
+                new_nodes_ops.push_back(NodeEntry::new(key, op));
+            }
+        }
+        
+        new_nodes_ops
     }
 
 }
