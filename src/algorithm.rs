@@ -166,8 +166,8 @@ pub mod b_epsilon_tree {
         // This might not be the best strategy, but I think it is ;-)
         // It's quite complex to explain, but in the end, the reason that makes me think
         // that it's the best stragegy is because we heavily batch inserts and we do copy-on-write.
-        let num_entries = new_entries.len() as u64;
-        let total_chunk_num = (num_entries as f64 / B as f64).ceil() as u64;
+        let num_entries = new_entries.len();
+        let total_chunk_num = num_entries / B + if num_entries % B == 0 { 0 } else { 1 };
         let smaller_chunk_len = num_entries / total_chunk_num;
         let bigger_chunk_num = num_entries % smaller_chunk_len;
         let bigger_chunk_len = smaller_chunk_len + 1;
