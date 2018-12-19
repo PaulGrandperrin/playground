@@ -27,7 +27,7 @@ impl<T: Foo + Bar> FooBar for T {}
 
 */
 
-pub trait Object = Serializable + ConstObjType where   AnyRcObject: From<Self>,
+pub trait Object = Serializable + ConstObjType where AnyRcObject: From<Self>,
         AnyRcObject: From<Rc<Self>>,
         Rc<Self>: TryFrom<AnyRcObject>,
         <Rc<Self> as TryFrom<AnyRcObject>>::Error: Debug;

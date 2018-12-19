@@ -9,9 +9,13 @@ use crate::non_volatile::object::object_type::ObjectType;
 use crate::non_volatile::object::tree::InternalNode;
 use crate::non_volatile::object::tree::LeafNode;
 use crate::non_volatile::object::tree::NodeEntry;
+use crate::non_volatile::object::tree::Node;
 
 pub mod b_epsilon_tree {
-    use super::*;
+    use crate::non_volatile::object::any_rc_object::Object;
+use crate::common::ConstObjType;
+use crate::non_volatile::serializable::Serializable;
+use super::*;
 
     const B: usize = 5;
 
@@ -155,7 +159,8 @@ pub mod b_epsilon_tree {
         }
     }
 
-    fn reduce(new_entries: LinkedList<NodeEntry<u64,ObjectPointer>>, nv_obj_mngr: &mut NVObjectManager) -> LinkedList<NodeEntry<u64, ObjectPointer>> {
+    fn reduce<K: Serializable + Copy, V: Serializable, OT: ConstObjType>(new_entries: LinkedList<NodeEntry<K,V>>, nv_obj_mngr: &mut NVObjectManager) -> LinkedList<NodeEntry<K, ObjectPointer>> 
+    where Node<K, V, OT>: Object {
         // Compute the length of newly created chunks
         // 
         // We want to minimize the number of chunks and maximize their occupancy while also
@@ -171,7 +176,7 @@ pub mod b_epsilon_tree {
         let smaller_chunk_len = num_entries / total_chunk_num;
         let bigger_chunk_num = num_entries % smaller_chunk_len;
         let bigger_chunk_len = smaller_chunk_len + 1;
-        let smaller_chunk_num =  (num_entries - bigger_chunk_len * bigger_chunk_num) / smaller_chunk_len;
+        let smaller_chunk_num = (num_entries - bigger_chunk_len * bigger_chunk_num) / smaller_chunk_len;
 
         let mut new_entries_it = new_entries.into_iter();
         let mut new_nodes_ops = LinkedList::new();
@@ -190,8 +195,8 @@ pub mod b_epsilon_tree {
                     }
                 }
 
-                let key = chunked_entries[0].key;
-                let new_internal_node = InternalNode::from(chunked_entries);
+                let key = chunked_entries[0].key; // TODO do not copy
+                let new_internal_node = Node::<K, V, OT>::from(chunked_entries);
                 
                 // write node
                 let op = nv_obj_mngr.store(new_internal_node);
