@@ -75,28 +75,9 @@ use super::*;
                 // of the leaf's entries and the buffer of operations
                 let it_leaf = leaf.entries.iter().cloned(); // we clone because leaf is RO because it can be cached
                 let it_buffer = buffer.iter().cloned(); // TODO when it'll be possible, move instead of clone
-                let it_entries = it_leaf.merge_by(it_buffer, |a, b| a.key <= b.key);
+                let entries: LinkedList<_> = it_leaf.merge_by(it_buffer, |a, b| a.key <= b.key).collect();
 
-                // split those entries in chunks of B entries,
-                // one chunk for each resulting leaf
-                let chunks = it_entries.chunks(B);
-
-                // list of resulting object pointers to leafs
-                let mut new_leafs_ops = LinkedList::new();
-
-                // one chunk for each leaf
-                for chunk in chunks.into_iter() {
-                    let entries: Vec<_> = chunk.collect(); // TODO why type inference is not working? wait for chalk
-                    let key = entries.first().unwrap().key.clone(); // FIXME we can crash here, but let the fuzzer find it later
-                    let new_leaf = LeafNode::from(entries);
-
-                    // write new leaf to nv device
-                    println!("writing leaf: {:?}", new_leaf);
-                    let op = nv_obj_mngr.store(new_leaf);
-                    new_leafs_ops.push_back(NodeEntry::new(key, op));
-                }
-
-                new_leafs_ops
+                reduce(entries, nv_obj_mngr)
             }
             ObjectType::InternalNode => {
                 let mut new_entries = LinkedList::new();
