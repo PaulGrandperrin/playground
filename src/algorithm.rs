@@ -77,6 +77,7 @@ use super::*;
                 let it_buffer = buffer.iter().cloned(); // TODO when it'll be possible, move instead of clone
                 let entries: LinkedList<_> = it_leaf.merge_by(it_buffer, |a, b| a.key <= b.key).collect();
 
+                // 
                 reduce(entries, nv_obj_mngr)
             }
             ObjectType::InternalNode => {
@@ -154,10 +155,10 @@ use super::*;
         // that it's the best stragegy is because we heavily batch inserts and we do copy-on-write.
         let num_entries = new_entries.len();
         let total_chunk_num = num_entries / B + if num_entries % B == 0 { 0 } else { 1 };
-        let smaller_chunk_len = num_entries / total_chunk_num;
-        let bigger_chunk_num = num_entries % smaller_chunk_len;
-        let bigger_chunk_len = smaller_chunk_len + 1;
-        let smaller_chunk_num = (num_entries - bigger_chunk_len * bigger_chunk_num) / smaller_chunk_len;
+        let bigger_chunk_len = num_entries / total_chunk_num + if num_entries % total_chunk_num == 0 { 0 } else { 1 };
+        let smaller_chunk_len = bigger_chunk_len - 1;
+        let smaller_chunk_num = bigger_chunk_len * total_chunk_num - num_entries;
+        let bigger_chunk_num = (num_entries - smaller_chunk_len * smaller_chunk_num) / bigger_chunk_len;
 
         let mut new_entries_it = new_entries.into_iter();
         let mut new_nodes_ops = LinkedList::new();
