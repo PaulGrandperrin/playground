@@ -141,8 +141,15 @@ use super::*;
         }
     }
 
-    fn reduce<K: Serializable + Copy, V: Serializable, OT: ConstObjType>(new_entries: LinkedList<NodeEntry<K,V>>, nv_obj_mngr: &mut NVObjectManager) -> LinkedList<NodeEntry<K, ObjectPointer>> 
-    where Node<K, V, OT>: Object {
+    struct Repartition {
+        smaller_chunk_len: usize,
+        smaller_chunk_num: usize,
+        bigger_chunk_len: usize,
+        bigger_chunk_num: usize,
+    }
+
+    #[inline]
+    fn compute_repartition(num_entries: usize, max_chunk_len: usize) -> Repartition {
         // Compute the length of newly created chunks
         // 
         // We want to minimize the number of chunks and maximize their occupancy while also
@@ -153,17 +160,28 @@ use super::*;
         // This might not be the best strategy, but I think it is ;-)
         // It's quite complex to explain, but in the end, the reason that makes me think
         // that it's the best stragegy is because we heavily batch inserts and we do copy-on-write.
-        let num_entries = new_entries.len();
-        let total_chunk_num = num_entries / B + if num_entries % B == 0 { 0 } else { 1 };
+        let total_chunk_num = num_entries / max_chunk_len + if num_entries % max_chunk_len == 0 { 0 } else { 1 };
         let bigger_chunk_len = num_entries / total_chunk_num + if num_entries % total_chunk_num == 0 { 0 } else { 1 };
         let smaller_chunk_len = bigger_chunk_len - 1;
         let smaller_chunk_num = bigger_chunk_len * total_chunk_num - num_entries;
         let bigger_chunk_num = (num_entries - smaller_chunk_len * smaller_chunk_num) / bigger_chunk_len;
 
+        Repartition {
+            smaller_chunk_len,
+            smaller_chunk_num,
+            bigger_chunk_len,
+            bigger_chunk_num,
+        }
+    }
+
+    fn reduce<K: Serializable + Copy, V: Serializable, OT: ConstObjType>(new_entries: LinkedList<NodeEntry<K,V>>, nv_obj_mngr: &mut NVObjectManager) -> LinkedList<NodeEntry<K, ObjectPointer>> 
+    where Node<K, V, OT>: Object {
+        let rep = compute_repartition(new_entries.len(), B);
+
         let mut new_entries_it = new_entries.into_iter();
         let mut new_nodes_ops = LinkedList::new();
 
-        for (chunk_len, chunk_num) in &[(bigger_chunk_len, bigger_chunk_num),(smaller_chunk_len, smaller_chunk_num)] {
+        for (chunk_len, chunk_num) in &[(rep.bigger_chunk_len, rep.bigger_chunk_num),(rep.smaller_chunk_len, rep.smaller_chunk_num)] {
             for _ in 0..*chunk_num {
                 let mut chunked_entries = Vec::new();
                 for i in 0..*chunk_len {
