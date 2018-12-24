@@ -7,6 +7,7 @@ pub enum ObjectType {
     Uberblock = 0,
     InternalNode = 1,
     LeafNode = 2,
+    BufferNode = 3,
 }
 
 impl ObjectType {
@@ -17,6 +18,7 @@ impl ObjectType {
             0 => ObjectType::Uberblock,
             1 => ObjectType::InternalNode,
             2 => ObjectType::LeafNode,
+            3 => ObjectType::BufferNode,
             _ => panic!("impossible ObjectType cast: {:?}", n),
         }
     }
@@ -26,6 +28,7 @@ impl ObjectType {
             ObjectType::Uberblock => 0,
             ObjectType::InternalNode => 1,
             ObjectType::LeafNode => 2,
+            ObjectType::BufferNode => 3,
         }
     }
 }

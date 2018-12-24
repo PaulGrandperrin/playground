@@ -15,10 +15,12 @@ use crate::common::ConstObjType;
 pub mod any_node;
 pub mod internal_node;
 pub mod leaf_node;
+pub mod buffer_node;
 
 pub use any_node::AnyNode;
 pub use internal_node::InternalNode;
 pub use leaf_node::LeafNode;
+pub use buffer_node::BufferNode;
 
 #[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
 pub struct NodeEntry<K, V> {

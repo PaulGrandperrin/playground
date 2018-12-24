@@ -1,4 +1,5 @@
 use super::*;
+use crate::non_volatile::object::object_type::ObjectType;
 
 use serde::de::{self, Deserialize, Deserializer, SeqAccess, Visitor};
 use serde::ser::{Serialize, SerializeStruct, Serializer};
@@ -8,6 +9,7 @@ use serde::ser::{Serialize, SerializeStruct, Serializer};
 #[derive(Debug, Clone)]
 pub struct InternalNode<K> {
     pub entries: Vec<NodeEntry<K, ObjectPointer>>,
+    pub buffer_ptr: ObjectPointer,
 }
 
 impl<K> ConstObjType for InternalNode<K> {
@@ -21,6 +23,7 @@ impl<K: serde::ser::Serialize> Serialize for InternalNode<K> {
     {
         let mut s = serializer.serialize_struct("InternalNode", 1)?;
         s.serialize_field("entries", &self.entries)?;
+        s.serialize_field("buffer_ptr", &self.buffer_ptr)?;
         s.end()
     }
 }
@@ -53,13 +56,18 @@ impl<'de, K: serde::de::DeserializeOwned> Deserialize<'de>
                     .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
 
+                let buffer_ptr = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(1, &self))?;
+
                 Ok(InternalNode {
                     entries,
+                    buffer_ptr,
                 })
             }
         }
 
-        const FIELDS: &[&str] = &["entries"];
+        const FIELDS: &[&str] = &["entries", "buffer_ptr"];
         deserializer.deserialize_struct(
             "InternalNode",
             FIELDS,
@@ -72,14 +80,13 @@ impl<'de, K: serde::de::DeserializeOwned> Deserialize<'de>
 
 impl<K> InternalNode<K> {
     pub fn new() -> Self {
-        Self {
-            entries: Vec::new(),
-        }
+        Self::from(Vec::new())
     }
 
     pub fn from(entries: Vec<NodeEntry<K, ObjectPointer>>) -> Self {
         Self {
             entries,
+            buffer_ptr: ObjectPointer{offset: 0, len: 0, object_type: ObjectType::BufferNode},
         }
     }
 
