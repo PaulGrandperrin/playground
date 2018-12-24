@@ -14,6 +14,12 @@ pub struct LeafNode<K, V> {
     pub entries: Vec<NodeEntry<K, V>>,
 }
 
+impl<K, V> Default for LeafNode<K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<K, V> ConstObjType for LeafNode<K, V> {
     const OBJ_TYPE: ObjectType = ObjectType::LeafNode;
 }

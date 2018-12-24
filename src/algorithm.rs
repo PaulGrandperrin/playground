@@ -9,6 +9,7 @@ use crate::non_volatile::object::object_type::ObjectType;
 use crate::non_volatile::object::tree::InternalNode;
 use crate::non_volatile::object::tree::LeafNode;
 use crate::non_volatile::object::tree::NodeEntry;
+use crate::non_volatile::object::tree::BufferNode;
 
 pub mod b_epsilon_tree {
     use crate::non_volatile::object::any_rc_object::Object;
@@ -28,7 +29,13 @@ use super::*;
             ObjectType::InternalNode => {
                 // get the internal node
                 let node = nv_obj_mngr.get::<InternalNode<u64>>(node_op);
-                println!("{:>6} {}Internal[{}]", format!("@{}", node_op.offset), "  ".repeat(indent), node.entries.iter().map(|e|{format!("{}:@{}", e.key, e.value.offset)}).join(", "));
+                let buffer = nv_obj_mngr.get::<BufferNode<u64, u64>>(&node.buffer_ptr);
+                println!("{:>6} {}Internal[{}] <- [{}]",
+                    format!("@{}", node_op.offset),
+                    "  ".repeat(indent),
+                    node.entries.iter().map(|e|{format!("{}:@{}", e.key, e.value.offset)}).join(", "),
+                    buffer.entries.iter().map(|e|{format!("{:?}", e)}).join(", "), // TODO make better
+                    );
 
                 // recusively print childs
                 for c in &node.entries {

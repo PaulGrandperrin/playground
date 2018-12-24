@@ -108,18 +108,30 @@ impl NVObjectManager {
 
     #[must_use]
     pub fn get<O: Object>(&mut self, op: &ObjectPointer) -> Rc<O> {
-        match self.ccache.get::<O>(op) {
-            Some(o) => {
-                //println!("cache hit :-)");
-                o
+        match (op.offset, op.len) {
+            (0, 0) => {
+                Rc::new(O::default())
+            },
+            (0, _) | (_, 0) => {
+                panic!("ObjectPointer has offset or length set to 0 but not both") // TODO return error instead
             }
-            None => {
-                println!("cache miss :-(");
-                let raw = self.nv_blk_dev.read(op.offset, op.len);
-                let obj = Serializable::deserialize(&raw).unwrap(); // FIXME: not zero-copy
-                Rc::new(obj)
+            (_, _) => {
+                match self.ccache.get::<O>(op) {
+                    Some(o) => {
+                        //println!("cache hit :-)");
+                        o
+                    }
+                    None => {
+                        println!("cache miss :-(");
+                        let raw = self.nv_blk_dev.read(op.offset, op.len);
+                        let obj = Serializable::deserialize(&raw).unwrap(); // FIXME: not zero-copy
+                        Rc::new(obj)
+                    }
+                }
             }
         }
+        
+        
     }
 
     #[must_use]

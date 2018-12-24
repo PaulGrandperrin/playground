@@ -12,6 +12,12 @@ pub struct InternalNode<K> {
     pub buffer_ptr: ObjectPointer,
 }
 
+impl<K> Default for InternalNode<K> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<K> ConstObjType for InternalNode<K> {
     const OBJ_TYPE: ObjectType = ObjectType::InternalNode;
 }

@@ -1,5 +1,5 @@
 use super::super::serializable::Serializable;
-use super::tree::{InternalNode, LeafNode};
+use super::tree::{InternalNode, LeafNode, BufferNode};
 use super::uberblock::Uberblock;
 use crate::common::ConstObjType;
 use failure::format_err;
@@ -13,6 +13,7 @@ pub enum AnyRcObject {
     Uberblock(Rc<Uberblock>),
     LeafNode(Rc<LeafNode<u64, u64>>),
     InternalNode(Rc<InternalNode<u64>>),
+    BufferNode(Rc<BufferNode<u64, u64>>),
 }
 
 impl AnyRcObject {
@@ -27,7 +28,7 @@ impl<T: Foo + Bar> FooBar for T {}
 
 */
 
-pub trait Object = Serializable + ConstObjType where AnyRcObject: From<Self>,
+pub trait Object = Serializable + ConstObjType + Default where AnyRcObject: From<Self>,
         AnyRcObject: From<Rc<Self>>,
         Rc<Self>: TryFrom<AnyRcObject>,
         <Rc<Self> as TryFrom<AnyRcObject>>::Error: Debug;
@@ -115,6 +116,31 @@ impl TryFrom<AnyRcObject> for Rc<InternalNode<u64>> {
             AnyRcObject::InternalNode(n) => Ok(n),
             _ => {
                 Err(format_err!("Cannot convert this AnyNode to a LeafNode")) // TODO better error message with trait
+            }
+        }
+    }
+}
+
+impl From<BufferNode<u64, u64>> for AnyRcObject {
+    fn from(this: BufferNode<u64, u64>) -> Self {
+        AnyRcObject::BufferNode(Rc::new(this))
+    }
+}
+
+impl From<Rc<BufferNode<u64, u64>>> for AnyRcObject {
+    fn from(this: Rc<BufferNode<u64, u64>>) -> Self {
+        AnyRcObject::BufferNode(this)
+    }
+}
+
+impl TryFrom<AnyRcObject> for Rc<BufferNode<u64, u64>> {
+    type Error = failure::Error;
+
+    fn try_from(this: AnyRcObject) -> Result<Self, Self::Error> {
+        match this {
+            AnyRcObject::BufferNode(n) => Ok(n),
+            _ => {
+                Err(format_err!("Cannot convert this AnyNode to a BufferNode")) // TODO better error message with trait
             }
         }
     }
