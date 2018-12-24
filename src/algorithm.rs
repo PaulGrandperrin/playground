@@ -9,7 +9,6 @@ use crate::non_volatile::object::object_type::ObjectType;
 use crate::non_volatile::object::tree::InternalNode;
 use crate::non_volatile::object::tree::LeafNode;
 use crate::non_volatile::object::tree::NodeEntry;
-use crate::non_volatile::object::tree::Node;
 
 pub mod b_epsilon_tree {
     use crate::non_volatile::object::any_rc_object::Object;
@@ -54,7 +53,9 @@ use super::*;
         let mut new_childs_ops = merge_rec(&buffer, nv_obj_mngr, op);
 
         while new_childs_ops.len() != 1 {
-            new_childs_ops = reduce(new_childs_ops, nv_obj_mngr);
+            new_childs_ops = reduce(new_childs_ops).into_iter().map(|chunk|{
+                    NodeEntry{key: chunk[0].key, value: nv_obj_mngr.store(InternalNode::from(chunk))}
+                }).collect()
         }
 
         new_childs_ops.pop_back().unwrap().value // garanted to succeed
@@ -78,7 +79,9 @@ use super::*;
                 let entries: LinkedList<_> = it_leaf.merge_by(it_buffer, |a, b| a.key <= b.key).collect();
 
                 // 
-                reduce(entries, nv_obj_mngr)
+                reduce(entries).into_iter().map(|chunk|{
+                    NodeEntry{key: chunk[0].key, value: nv_obj_mngr.store(LeafNode::from(chunk))}
+                }).collect()
             }
             ObjectType::InternalNode => {
                 let mut new_entries = LinkedList::new();
@@ -135,7 +138,10 @@ use super::*;
                     new_entries.push_back(internal.entries[i].clone()); // TODO when it'll be possible don't clone, but move
                 }
 
-                reduce(new_entries, nv_obj_mngr)
+
+                reduce(new_entries).into_iter().map(|chunk|{
+                    NodeEntry{key: chunk[0].key, value: nv_obj_mngr.store(InternalNode::from(chunk))}
+                }).collect()
             },
             _ => unreachable!("expected a node object but got a {:?}", node_op.object_type)
         }
@@ -174,12 +180,12 @@ use super::*;
         }
     }
 
-    fn reduce<K: Serializable + Copy, V: Serializable, OT: ConstObjType>(new_entries: LinkedList<NodeEntry<K,V>>, nv_obj_mngr: &mut NVObjectManager) -> LinkedList<NodeEntry<K, ObjectPointer>> 
-    where Node<K, V, OT>: Object {
+    fn reduce<K: Serializable + Copy, V: Serializable>(new_entries: LinkedList<NodeEntry<K,V>>)
+    -> LinkedList<Vec<NodeEntry<K, V>>> {
         let rep = compute_repartition(new_entries.len(), B);
 
+        let mut result = LinkedList::new();
         let mut new_entries_it = new_entries.into_iter();
-        let mut new_nodes_ops = LinkedList::new();
 
         for (chunk_len, chunk_num) in &[(rep.bigger_chunk_len, rep.bigger_chunk_num),(rep.smaller_chunk_len, rep.smaller_chunk_num)] {
             for _ in 0..*chunk_num {
@@ -196,15 +202,11 @@ use super::*;
                 }
 
                 let key = chunked_entries[0].key; // TODO do not copy
-                let new_internal_node = Node::<K, V, OT>::from(chunked_entries);
-                
-                // write node
-                let op = nv_obj_mngr.store(new_internal_node);
-                new_nodes_ops.push_back(NodeEntry::new(key, op));
+                result.push_back(chunked_entries);
             }
         }
         
-        new_nodes_ops
+        result
     }
 
 }

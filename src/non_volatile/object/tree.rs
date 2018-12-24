@@ -62,6 +62,7 @@ impl ConstObjType for InternalType {
     const OBJ_TYPE: ObjectType = ObjectType::InternalNode;
 }
 
+/*
 /// Blanket implementation for all kind of Nodes
 impl<K, V, OT: ConstObjType> ConstObjType for Node<K, V, OT> {
     const OBJ_TYPE: ObjectType = OT::OBJ_TYPE;
@@ -166,3 +167,4 @@ impl<K, V, OT> Node<K, V, OT> {
         }
     }
 }
+*/

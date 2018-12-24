@@ -3,7 +3,7 @@ use crate::common::ConstObjType;
 use crate::non_volatile::manager::NVObjectManager;
 use crate::non_volatile::object::object_pointer::ObjectPointer;
 use crate::non_volatile::object::object_type::ObjectType;
-use crate::non_volatile::object::tree::{LeafNode, LeafType, Node, NodeEntry};
+use crate::non_volatile::object::tree::{LeafNode, LeafType, NodeEntry};
 
 use std::collections::BTreeMap;
 use std::ops::Deref;
