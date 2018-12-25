@@ -13,11 +13,15 @@ use crate::non_volatile::object::tree::BufferNode;
 
 pub mod b_epsilon_tree {
     use crate::non_volatile::object::any_rc_object::Object;
-use crate::common::ConstObjType;
-use crate::non_volatile::serializable::Serializable;
-use super::*;
+    use crate::common::ConstObjType;
+    use crate::non_volatile::serializable::Serializable;
+    use super::*;
 
     const B: usize = 5;
+
+    pub fn new() -> impl Object {
+        LeafNode::<u64, u64>::new()
+    }
 
     pub fn debug(indent: usize, nv_obj_mngr: &mut NVObjectManager, node_op: &ObjectPointer) {
         match node_op.object_type {

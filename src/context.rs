@@ -18,8 +18,7 @@ pub struct Context {
 
 impl Context {
     pub fn new() -> Context {
-        let leaf = LeafNode::<u64, u64>::new();
-        let (nv_obj_mngr, head) = NVObjectManager::new(leaf);
+        let (nv_obj_mngr, head) = NVObjectManager::new(algorithm::b_epsilon_tree::new());
 
         Self {
             nv_obj_mngr,
