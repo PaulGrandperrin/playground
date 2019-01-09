@@ -9,7 +9,7 @@ use crate::non_volatile::object::object_type::ObjectType;
 use crate::non_volatile::object::tree::InternalNode;
 use crate::non_volatile::object::tree::LeafNode;
 use crate::non_volatile::object::tree::NodeEntry;
-use crate::non_volatile::object::tree::BufferNode;
+use crate::non_volatile::object::tree::{BufferNode, Message, Insert};
 
 pub mod b_epsilon_tree {
     use crate::non_volatile::object::any_rc_object::Object;
@@ -51,17 +51,17 @@ pub mod b_epsilon_tree {
     }
 
     pub fn merge_tree(
-        in_buffer: impl IntoIterator<Item=(u64, u64)>,
+        in_memstore: impl IntoIterator<Item=(u64, u64)>,
         nv_obj_mngr: &mut NVObjectManager,
         op: &ObjectPointer,
     ) -> ObjectPointer {
-        // transform the insertion optimized buffer into a custom structure optimized for merging into the Bε-tree
-        let mut buffer = Vec::new(); // TODO replace with custom ro-btree with cardinality metadata in nodes
-        for (k, v) in in_buffer.into_iter() {
-            buffer.push(NodeEntry::new(k, v));
+        // transform the insertion optimized memstore into a custom structure optimized for merging into the Bε-tree
+        let mut memstore = Vec::new(); // TODO replace with custom ro-btree with cardinality metadata in nodes
+        for (k, v) in in_memstore.into_iter() {
+            memstore.push(NodeEntry::new(k, v));
         }
 
-        let mut new_childs_ops = merge_rec(&buffer, nv_obj_mngr, op);
+        let mut new_childs_ops = merge_rec(&memstore, nv_obj_mngr, op);
 
         while new_childs_ops.len() != 1 {
             new_childs_ops = reduce(new_childs_ops).into_iter().map(|chunk|{
@@ -73,21 +73,21 @@ pub mod b_epsilon_tree {
     }
 
     fn merge_rec(
-        buffer: &[NodeEntry<u64, u64>],
+        memstore: &[NodeEntry<u64, u64>],
         nv_obj_mngr: &mut NVObjectManager,
         node_op: &ObjectPointer,
     ) -> LinkedList<NodeEntry<u64, ObjectPointer>> {
-        println!("merging this buffer: {:?}", buffer);
+        println!("merging this memstore: {:?}", memstore);
         match node_op.object_type {
             ObjectType::LeafNode => {
                 // get the leaf
                 let leaf = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
 
                 // prepare an iterator representing the view of the sorted merging
-                // of the leaf's entries and the buffer of operations
+                // of the leaf's entries and the memstore of operations
                 let it_leaf = leaf.entries.iter().cloned(); // we clone because leaf is RO because it can be cached
-                let it_buffer = buffer.iter().cloned(); // TODO when it'll be possible, move instead of clone
-                let entries: LinkedList<_> = it_leaf.merge_by(it_buffer, |a, b| a.key <= b.key).collect();
+                let it_memstore = memstore.iter().cloned(); // TODO when it'll be possible, move instead of clone
+                let entries: LinkedList<_> = it_leaf.merge_by(it_memstore, |a, b| a.key <= b.key).collect();
 
                 // 
                 reduce(entries).into_iter().map(|chunk|{
@@ -97,18 +97,18 @@ pub mod b_epsilon_tree {
             ObjectType::InternalNode => {
                 let mut new_entries = LinkedList::new();
                 let mut old_entries_it = 0;
-                let mut buffer_it = 0;
+                let mut memstore_it = 0;
 
                 // get the node
                 let internal = nv_obj_mngr.get::<InternalNode<u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
                 println!("read at {}: {:?}", node_op.offset, internal);
 
                 assert!(internal.entries.len() > 0); // FIXME replace with real value when I know it
-                // find branch where to insert first element of buffer
-                while buffer_it < buffer.len() {
-                    println!("searching for {} in {:?}", &buffer[buffer_it].key, &internal.entries[old_entries_it..]);
-                    // find branch index where to insert the begining of the buffer
-                    let branch_index = match internal.entries[old_entries_it..].binary_search_by_key(&buffer[buffer_it].key, |entry| entry.key) {
+                // find branch where to insert first element of memstore
+                while memstore_it < memstore.len() {
+                    println!("searching for {} in {:?}", &memstore[memstore_it].key, &internal.entries[old_entries_it..]);
+                    // find branch index where to insert the begining of the memstore
+                    let branch_index = match internal.entries[old_entries_it..].binary_search_by_key(&memstore[memstore_it].key, |entry| entry.key) {
                         Ok(i) => i, // exact match
                         Err(0) => 0, // key is smaller than first entry FIXME: maybe that's not supposed to happen
                         Err(i) => i - 1, // match first bigger entry or end of slice
@@ -116,20 +116,20 @@ pub mod b_epsilon_tree {
 
                     println!("branch_index: {}", branch_index);
 
-                    // now we need to find how many elements of the buffer we can insert in this branch
+                    // now we need to find how many elements of the memstore we can insert in this branch
                     // first find the bigger allow element
-                    buffer_it = if let Some(NodeEntry{key: max, value: _}) = internal.entries.get(branch_index + 1) {
-                        // there is another entry so our buffer needs to be right bounded
-                        dbg!(buffer);
+                    memstore_it = if let Some(NodeEntry{key: max, value: _}) = internal.entries.get(branch_index + 1) {
+                        // there is another entry so our memstore needs to be right bounded
+                        dbg!(memstore);
                         println!("max: {}", max);
-                        match buffer.binary_search_by_key(max, |entry| entry.key) {
+                        match memstore.binary_search_by_key(max, |entry| entry.key) {
                             Ok(i) => i, // exact match
                             Err(0) => unreachable!(), // key is smaller than first entry
                             Err(i) => i, // match first bigger entry or end of slice
                         }
                     } else {
-                        println!("selecting all buffer");
-                        buffer.len()
+                        println!("selecting all memstore");
+                        memstore.len()
                     };
 
                     // move directly skipped and untouched entries in new list
@@ -139,7 +139,7 @@ pub mod b_epsilon_tree {
                     }
 
                     // append all new entries
-                    new_entries.append(&mut merge_rec(&buffer[..buffer_it], nv_obj_mngr, &internal.entries[branch_index].value));
+                    new_entries.append(&mut merge_rec(&memstore[..memstore_it], nv_obj_mngr, &internal.entries[branch_index].value));
                     old_entries_it = branch_index + 1;
                 }
 
@@ -220,16 +220,139 @@ pub mod b_epsilon_tree {
         result
     }
 
+    pub fn merge_tree_epsilon(
+        in_memstore: impl IntoIterator<Item=(u64, Message<u64>)>,
+        nv_obj_mngr: &mut NVObjectManager,
+        op: &ObjectPointer,
+    ) -> ObjectPointer {
+        // transform the insertion optimized memstore into a custom structure optimized for merging into the Bε-tree
+        let mut memstore = Vec::new(); // TODO replace with custom ro-btree with cardinality metadata in nodes
+        for msg in in_memstore.into_iter() {
+            memstore.push(NodeEntry::new(msg.0, msg.1));
+        }
+
+        let mut new_childs_ops = merge_rec_epsilon(&memstore, nv_obj_mngr, op);
+
+        while new_childs_ops.len() != 1 {
+            new_childs_ops = reduce(new_childs_ops).into_iter().map(|chunk|{
+                    NodeEntry{key: chunk[0].key, value: nv_obj_mngr.store(InternalNode::from(chunk))}
+                }).collect()
+        }
+
+        new_childs_ops.pop_back().unwrap().value // garanted to succeed
+    }
+
+
+    fn merge_rec_epsilon(
+        memstore: &[NodeEntry<u64, Message<u64>>],
+        nv_obj_mngr: &mut NVObjectManager,
+        node_op: &ObjectPointer,
+    ) -> LinkedList<NodeEntry<u64, ObjectPointer>> {
+        println!("merging this memstore: {:?}", memstore);
+        match node_op.object_type {
+            ObjectType::LeafNode => {
+                // get the leaf
+                let leaf = nv_obj_mngr.get::<LeafNode<u64, u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
+
+                // prepare an iterator representing the view of the sorted merging
+                // of the leaf's entries and the memstore of operations
+                let it_leaf = leaf.entries.iter().cloned(); // we clone because leaf is RO because it can be cached
+                let it_memstore = memstore.iter().cloned(); // TODO when it'll be possible, move instead of clone
+                let it_memstore = it_memstore.map(|msg| {
+                    match msg.value {
+                        Message::Insert(i) => {
+                            NodeEntry::new(msg.key, i.value)
+                        }
+                    }
+                });
+                let entries: LinkedList<_> = it_leaf.merge_by(it_memstore, |a, b| a.key <= b.key).collect();
+
+                // 
+                reduce(entries).into_iter().map(|chunk|{
+                    NodeEntry{key: chunk[0].key, value: nv_obj_mngr.store(LeafNode::from(chunk))}
+                }).collect()
+            }
+            ObjectType::InternalNode => {
+
+                let mut new_entries = LinkedList::new();
+                let mut old_entries_it = 0;
+                let mut memstore_it = 0;
+
+                // get the node
+                let internal = nv_obj_mngr.get::<InternalNode<u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
+                println!("read at {}: {:?}", node_op.offset, internal);
+                assert!(internal.entries.len() > 0); // FIXME replace with real value when I know it
+
+                // get the buffer
+                let buffer_node = nv_obj_mngr.get::<BufferNode<u64, u64>>(&internal.buffer_ptr);
+
+                unimplemented!();
+
+                // find branch where to insert first element of memstore
+                while memstore_it < memstore.len() {
+                    /*println!("searching for {} in {:?}", &memstore[memstore_it].key, &internal.entries[old_entries_it..]);
+                    // find branch index where to insert the begining of the memstore
+                    let branch_index = match internal.entries[old_entries_it..].binary_search_by_key(&memstore[memstore_it].key, |entry| entry.key) {
+                        Ok(i) => i, // exact match
+                        Err(0) => 0, // key is smaller than first entry FIXME: maybe that's not supposed to happen
+                        Err(i) => i - 1, // match first bigger entry or end of slice
+                    };
+
+                    println!("branch_index: {}", branch_index);
+
+                    // now we need to find how many elements of the memstore we can insert in this branch
+                    // first find the bigger allow element
+                    memstore_it = if let Some(NodeEntry{key: max, value: _}) = internal.entries.get(branch_index + 1) {
+                        // there is another entry so our memstore needs to be right bounded
+                        dbg!(memstore);
+                        println!("max: {}", max);
+                        match memstore.binary_search_by_key(max, |entry| entry.key) {
+                            Ok(i) => i, // exact match
+                            Err(0) => unreachable!(), // key is smaller than first entry
+                            Err(i) => i, // match first bigger entry or end of slice
+                        }
+                    } else {
+                        println!("selecting all memstore");
+                        memstore.len()
+                    };
+
+                    // move directly skipped and untouched entries in new list
+                    for i in old_entries_it..branch_index {
+                        println!("moving directly to newlist: {:?}", internal.entries[i]);
+                        new_entries.push_back(internal.entries[i].clone()); // TODO when it'll be possible don't clone, but move
+                    }
+
+                    // append all new entries
+                    new_entries.append(&mut merge_rec(&memstore[..memstore_it], nv_obj_mngr, &internal.entries[branch_index].value));
+                    old_entries_it = branch_index + 1;
+                    */
+                }
+
+                 // move all remaining entries
+                for i in old_entries_it..internal.entries.len() {
+                    println!("moving directly to newlist: {:?}", internal.entries[i]);
+                    new_entries.push_back(internal.entries[i].clone()); // TODO when it'll be possible don't clone, but move
+                }
+
+
+                reduce(new_entries).into_iter().map(|chunk|{
+                    NodeEntry{key: chunk[0].key, value: nv_obj_mngr.store(InternalNode::from(chunk))}
+                }).collect()
+            },
+            _ => unreachable!("expected a node object but got a {:?}", node_op.object_type)
+        }
+    }
+
 }
 
 /*
-pub fn merge(buffer: &BTreeMap<u64, u64>, trp: &ObjectPointer, sm: &mut SpaceManager)  {
+pub fn merge(memstore: &BTreeMap<u64, u64>, trp: &ObjectPointer, sm: &mut SpaceManager)  {
     let any_node = sm.retrieve::<AnyNode<u64,u64>>(trp);
     match any_node {
         AnyNode::LeafNode(node) => {
             unimplemented!()
 
-            //let it_buf = buffer.into_iter();
+            //let it_buf = memstore.into_iter();
             //let it_node = node.entries.into_iter();
 
 
