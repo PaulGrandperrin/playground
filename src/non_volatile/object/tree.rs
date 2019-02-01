@@ -22,7 +22,7 @@ pub use internal_node::InternalNode;
 pub use leaf_node::LeafNode;
 pub use buffer_node::{BufferNode, Message, Insert};
 
-#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NodeEntry<K, V> {
     pub key: K,
     pub value: V,

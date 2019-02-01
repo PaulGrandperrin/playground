@@ -6,7 +6,7 @@ use std::mem::size_of;
 use bytes::{Buf, BufMut};
 use std::io::Cursor;
 
-#[derive(Debug, Clone, serde_derive::Serialize, serde_derive::Deserialize)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ObjectPointer {
     // TODO => rename ExtendPointer
     pub offset: u64,
