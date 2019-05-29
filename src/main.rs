@@ -19,6 +19,7 @@ mod non_volatile; // Tree algorithm
 use crate::context::Context;
 
 fn main() {
+    color_backtrace::install();
     println!("format and load");
     let mut ctx = Context::new();
 
