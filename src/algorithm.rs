@@ -18,6 +18,7 @@ pub mod b_epsilon_tree {
     use super::*;
 
     const B: usize = 5;
+    const BUF_SIZE: usize = 8;
 
     pub fn new() -> impl Object {
         LeafNode::<u64, u64>::new()
@@ -273,11 +274,6 @@ pub mod b_epsilon_tree {
                 }).collect()
             }
             ObjectType::InternalNode => {
-
-                let mut new_entries = LinkedList::new();
-                let mut old_entries_it = 0;
-                let mut memstore_it = 0;
-
                 // get the node
                 let internal = nv_obj_mngr.get::<InternalNode<u64>>(node_op); // TODO: if the node was not in the cache before, we could directly get the owned version as we're going to modify it anyway.
                 println!("read at {}: {:?}", node_op.offset, internal);
@@ -286,58 +282,31 @@ pub mod b_epsilon_tree {
                 // get the buffer
                 let buffer_node = nv_obj_mngr.get::<BufferNode<u64, u64>>(&internal.buffer_ptr);
 
-                unimplemented!();
+                // we want to find how many items we can fit in the first branch
+                // those items are counted from the memstore and the current buffernode.
+                // both of which are sorted.
+                let upper_limit_of_first_branch = internal.entries[1].key;
+                // we skipped the first key cause we don't care about its value. TODO maybe not even store it
+                let end_itx_memstore = match memstore.binary_search_by_key(&upper_limit_of_first_branch, |entry| entry.key) {
+                    Ok(i) => i, // exact match
+                    Err(0) => 0, // key is smaller than first entry
+                    Err(i) => i, // match first bigger entry or end of slice
+                };
+                let end_itx_buffernode = match buffer_node.entries.binary_search_by_key(&upper_limit_of_first_branch, |entry| entry.key) {
+                    Ok(i) => i, // exact match
+                    Err(0) => 0, // key is smaller than first entry
+                    Err(i) => i, // match first bigger entry or end of slice
+                };
 
-                // find branch where to insert first element of memstore
-                while memstore_it < memstore.len() {
-                    /*println!("searching for {} in {:?}", &memstore[memstore_it].key, &internal.entries[old_entries_it..]);
-                    // find branch index where to insert the begining of the memstore
-                    let branch_index = match internal.entries[old_entries_it..].binary_search_by_key(&memstore[memstore_it].key, |entry| entry.key) {
-                        Ok(i) => i, // exact match
-                        Err(0) => 0, // key is smaller than first entry FIXME: maybe that's not supposed to happen
-                        Err(i) => i - 1, // match first bigger entry or end of slice
-                    };
-
-                    println!("branch_index: {}", branch_index);
-
-                    // now we need to find how many elements of the memstore we can insert in this branch
-                    // first find the bigger allow element
-                    memstore_it = if let Some(NodeEntry{key: max, value: _}) = internal.entries.get(branch_index + 1) {
-                        // there is another entry so our memstore needs to be right bounded
-                        dbg!(memstore);
-                        println!("max: {}", max);
-                        match memstore.binary_search_by_key(max, |entry| entry.key) {
-                            Ok(i) => i, // exact match
-                            Err(0) => unreachable!(), // key is smaller than first entry
-                            Err(i) => i, // match first bigger entry or end of slice
-                        }
-                    } else {
-                        println!("selecting all memstore");
-                        memstore.len()
-                    };
-
-                    // move directly skipped and untouched entries in new list
-                    for i in old_entries_it..branch_index {
-                        println!("moving directly to newlist: {:?}", internal.entries[i]);
-                        new_entries.push_back(internal.entries[i].clone()); // TODO when it'll be possible don't clone, but move
-                    }
-
-                    // append all new entries
-                    new_entries.append(&mut merge_rec(&memstore[..memstore_it], nv_obj_mngr, &internal.entries[branch_index].value));
-                    old_entries_it = branch_index + 1;
-                    */
+                let num_of_candidates_for_cur_child = end_itx_memstore + end_itx_buffernode; // TODO also add the number of items in the child's buffernode by saving this number in its parent
+                if (num_of_candidates_for_cur_child > BUF_SIZE) { // BIG TODO find a better heuristic
+                    unimplemented!();
+                } else {
+                    
                 }
+                
 
-                 // move all remaining entries
-                for i in old_entries_it..internal.entries.len() {
-                    println!("moving directly to newlist: {:?}", internal.entries[i]);
-                    new_entries.push_back(internal.entries[i].clone()); // TODO when it'll be possible don't clone, but move
-                }
-
-
-                reduce(new_entries).into_iter().map(|chunk|{
-                    NodeEntry{key: chunk[0].key, value: nv_obj_mngr.store(InternalNode::from(chunk))}
-                }).collect()
+                unimplemented!()
             },
             _ => unreachable!("expected a node object but got a {:?}", node_op.object_type)
         }
