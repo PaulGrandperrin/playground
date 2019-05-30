@@ -18,7 +18,7 @@ mod non_volatile; // Tree algorithm
 
 use crate::context::Context;
 
-fn main() {
+fn main() -> Result<(), exitfailure::ExitFailure> {
     color_backtrace::install();
     println!("format and load");
     let mut ctx = Context::new();
@@ -27,7 +27,7 @@ fn main() {
         println!("insert {}", i);
         ctx.insert(i, 1000+i);
     }
-    return;
+    return Ok(());
     ctx.commit();
 
     let i=20;
